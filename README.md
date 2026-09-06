@@ -12,6 +12,27 @@ moving UI layout intent between SwiftUI, WinUI XAML, and Qt. The current
 reviewable generator scaffolds, target contracts, and manifest-directed project
 build bundles.
 
+## Local developer installation
+
+```sh
+make build                       # compile and install ~/.local/bin/loom
+make compile                     # compile only to .build/loom (CI/cross-builds)
+make build PREFIX="$HOME/.local" # explicit installation prefix
+```
+
+`make install` is equivalent to `make build`. Put `$HOME/.local/bin` before
+Homebrew on PATH. The installed executable is copied out of the checkout, so
+moving the source repo does not break it. `scripts/build-local.sh` stages builds,
+rejects cross-architecture installation, and retains previous installs under
+`$HOME/.local/share/loom/installs/`. The current `install-info.txt` in that tool's
+share directory records source path, commit, dirty state, Go version, and SHA-256.
+Raw `go build` and release/CI scripts remain compile/package-only.
+Run `python3 scripts/test-local-install.py` for isolated installer regression checks.
+
+The installed pattern catalog is `$HOME/.local/share/loom/patterns`; verify it from outside the checkout with `loom patterns:validate --json`.
+
+
+
 ## What Loom Does Today
 
 - Parse WinUI XAML and normalize it into loom's shared layout model (`inspect:xaml`).
@@ -55,7 +76,7 @@ text, grids, lists, scroll regions, split views, toggles, and text input.
 
 When you run loom from this repository, it uses `./patterns` by default. When
 installed with `make build`, the same catalog is copied to
-`/opt/homebrew/share/loom/patterns` so the installed `loom` command can validate,
+`$HOME/.local/share/loom/patterns` so the installed `loom` command can validate,
 lint, list, export, and transfer-plan against loom's own pattern definitions.
 
 Generator output is intentionally conservative. It is suitable for review,
@@ -66,7 +87,7 @@ release artifacts, and native smoke evidence before stable support is claimed.
 ## Build And Test
 
 ```sh
-make build      # installs /opt/homebrew/bin/loom on local Homebrew systems
+make build      # installs ~/.local/bin/loom and its pattern catalog
 make test       # runs go test ./...
 go vet ./...    # static correctness check
 ```

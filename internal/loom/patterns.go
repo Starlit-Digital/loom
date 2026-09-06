@@ -157,6 +157,11 @@ func ResolvePatternDirectory(directory string) string {
 		}
 	}
 	if executable, err := os.Executable(); err == nil {
+		// Compatibility links must use the installed binary's catalog, not an
+		// older catalog beside the link in a different prefix.
+		if resolved, err := filepath.EvalSymlinks(executable); err == nil {
+			executable = resolved
+		}
 		executableDir := filepath.Dir(executable)
 		candidates = append(candidates,
 			filepath.Join(executableDir, DefaultPatternDirectory),

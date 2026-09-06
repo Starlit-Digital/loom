@@ -10,3 +10,6 @@ tmp/
 /loom
 *.test
 coverage.out
+
+# Local developer compile output
+/.build/

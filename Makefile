@@ -1,19 +1,14 @@
-GO := go
-CMD_DIR := ./cmd/loom
-INSTALL_DIR := /opt/homebrew/bin
-INSTALL_SHARE_DIR := /opt/homebrew/share/loom
-BIN_NAME := loom
-
-.PHONY: build
-build:
-	mkdir -p $(INSTALL_DIR)
-	mkdir -p $(INSTALL_SHARE_DIR)
-	$(GO) build -o $(INSTALL_DIR)/$(BIN_NAME) $(CMD_DIR)
-	cp -R patterns $(INSTALL_SHARE_DIR)/
-	@echo "loom installed to $(INSTALL_DIR)/$(BIN_NAME)"
-	@echo "loom patterns installed to $(INSTALL_SHARE_DIR)/patterns"
-
-.PHONY: test
+# Native developer builds install to the user-local POSIX prefix.
+# Use compile for CI, cross compilation, or a build that must not change PATH tools.
+.DEFAULT_GOAL := build
+GO ?= go
+PREFIX ?= $(HOME)/.local
+.PHONY: build install compile test
+build: install
+install:
+	GO="$(GO)" PREFIX="$(PREFIX)" bash scripts/build-local.sh
+compile:
+	GO="$(GO)" PREFIX="$(PREFIX)" bash scripts/build-local.sh --compile-only
 test:
 	$(GO) test ./...
 
