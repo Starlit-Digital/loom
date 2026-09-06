@@ -94,7 +94,7 @@ jobs:
           Compress-Archive -Path "dist/loom-${{ matrix.suffix }}" -DestinationPath "dist/loom-${{ github.ref_name }}-${{ matrix.suffix }}.zip"
 
       - name: Upload to release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           files: |
             dist/loom-${{ github.ref_name }}-${{ matrix.suffix }}.*
