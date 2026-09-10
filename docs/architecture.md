@@ -35,8 +35,9 @@ project builds.
 - `inspect:source`: auto-detect SwiftUI, WinUI XAML, or Qt source and inspect it.
 - `inspect:parity`: compare normalized layout structure across supported
   dialects.
-- `inspect:visual-parity`: compare profile-normalized visual metrics across
-  supported dialects as pre-render visual regression infrastructure.
+- `inspect:visual-parity`: compare profile-normalized visual metrics and
+  semantic visual roles across supported dialects as pre-render visual
+  regression infrastructure.
 - `graph:components`: discover component boundaries and source-tree dependency
   edges.
 - `generate:xaml`: emit reviewable WinUI XAML fragments and replace explicit

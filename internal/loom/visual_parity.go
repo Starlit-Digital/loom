@@ -70,6 +70,19 @@ type VisualMetric struct {
 	MinHeight      float64  `json:"minHeight,omitempty"`
 }
 
+type VisualSemantic struct {
+	Role        string `json:"role,omitempty"`
+	Composition string `json:"composition,omitempty"`
+	Chrome      string `json:"chrome,omitempty"`
+	Emphasis    string `json:"emphasis,omitempty"`
+	Density     string `json:"density,omitempty"`
+	Interaction string `json:"interaction,omitempty"`
+	Media       string `json:"media,omitempty"`
+	Alignment   string `json:"alignment,omitempty"`
+	State       string `json:"state,omitempty"`
+	Boundary    string `json:"boundary,omitempty"`
+}
+
 type VisualProvenance struct {
 	Origin     string  `json:"origin"`
 	Detail     string  `json:"detail,omitempty"`
@@ -81,6 +94,7 @@ type VisualParityEntry struct {
 	Kind       NodeKind                    `json:"kind"`
 	Label      string                      `json:"label,omitempty"`
 	Metrics    VisualMetric                `json:"metrics"`
+	Semantics  VisualSemantic              `json:"semantics,omitempty"`
 	Provenance map[string]VisualProvenance `json:"provenance,omitempty"`
 }
 
@@ -208,6 +222,14 @@ func DefaultVisualProfile() VisualProfile {
 				Typography:       VisualTypographyProfile{FontFamily: "system", FallbackFonts: []string{"Sans Serif"}, FontSize: 14, Kerning: 0, LineHeight: 20, BaselineOffset: 0},
 				Spacing:          VisualSpacingProfile{DefaultPadding: 0, DefaultMargin: 0, StackSpacing: 6},
 				Controls:         VisualControlProfile{ButtonMinHeight: 30, TextFieldMinHeight: 30, ToggleMinHeight: 30, ListRowMinHeight: 32},
+				typographyOrigin: "default-profile",
+				spacingOrigin:    "default-profile",
+				controlsOrigin:   "default-profile",
+			},
+			"juce": {
+				Typography:       VisualTypographyProfile{FontFamily: "system", FallbackFonts: []string{"Arial", "Helvetica"}, FontSize: 15, Kerning: 0, LineHeight: 20, BaselineOffset: 0},
+				Spacing:          VisualSpacingProfile{DefaultPadding: 0, DefaultMargin: 0, StackSpacing: 8},
+				Controls:         VisualControlProfile{ButtonMinHeight: 32, TextFieldMinHeight: 32, ToggleMinHeight: 32, ListRowMinHeight: 36},
 				typographyOrigin: "default-profile",
 				spacingOrigin:    "default-profile",
 				controlsOrigin:   "default-profile",
@@ -357,7 +379,7 @@ func visualParityEntries(root Node, profile VisualPlatformProfile) []VisualParit
 	var walk func(Node, string)
 	walk = func(node Node, path string) {
 		metrics, provenance := visualMetricsWithProvenance(node, profile)
-		entries = append(entries, VisualParityEntry{Path: path, Kind: node.Kind, Label: firstNonEmpty(node.VisibleLabel, node.AccessibleName, node.Placeholder, node.Resource), Metrics: metrics, Provenance: provenance})
+		entries = append(entries, VisualParityEntry{Path: path, Kind: node.Kind, Label: firstNonEmpty(node.VisibleLabel, node.AccessibleName, node.Placeholder, node.Resource), Metrics: metrics, Semantics: visualSemantics(node, metrics), Provenance: provenance})
 		siblingCounts := map[NodeKind]int{}
 		for _, child := range node.Children {
 			index := siblingCounts[child.Kind]
@@ -540,6 +562,7 @@ func compareVisualParityEntries(source, target []VisualParityEntry, tolerances V
 		if sourceEntry.Kind != targetEntry.Kind {
 			findings = append(findings, VisualParityFinding{Severity: SeverityWarning, Code: "VISUAL.KIND", Path: sourceEntry.Path, Confidence: 0.95, Message: fmt.Sprintf("source kind %s differs from target kind %s.", sourceEntry.Kind, targetEntry.Kind)})
 		}
+		findings = append(findings, compareVisualSemantics(sourceEntry.Path, sourceEntry.Semantics, targetEntry.Semantics)...)
 		findings = append(findings, compareVisualMetrics(sourceEntry.Path, sourceEntry.Metrics, targetEntry.Metrics, sourceEntry.Provenance, targetEntry.Provenance, tolerances)...)
 	}
 	sourceByPath := map[string]bool{}
@@ -550,6 +573,40 @@ func compareVisualParityEntries(source, target []VisualParityEntry, tolerances V
 		if !sourceByPath[targetEntry.Path] {
 			findings = append(findings, VisualParityFinding{Severity: SeverityWarning, Code: "VISUAL.PATH", Path: targetEntry.Path, Confidence: 0.95, Message: "target visual node has no matching source node at the same tree path."})
 		}
+	}
+	return findings
+}
+
+func compareVisualSemantics(path string, source, target VisualSemantic) []VisualParityFinding {
+	findings := []VisualParityFinding{}
+	values := []struct {
+		metric string
+		source string
+		target string
+	}{
+		{"semantic.role", source.Role, target.Role},
+		{"semantic.composition", source.Composition, target.Composition},
+		{"semantic.chrome", source.Chrome, target.Chrome},
+		{"semantic.emphasis", source.Emphasis, target.Emphasis},
+		{"semantic.density", source.Density, target.Density},
+		{"semantic.interaction", source.Interaction, target.Interaction},
+		{"semantic.media", source.Media, target.Media},
+		{"semantic.alignment", source.Alignment, target.Alignment},
+		{"semantic.state", source.State, target.State},
+		{"semantic.boundary", source.Boundary, target.Boundary},
+	}
+	for _, value := range values {
+		if value.source == "" || value.target == "" || value.source == value.target {
+			continue
+		}
+		findings = append(findings, VisualParityFinding{
+			Severity:   SeverityWarning,
+			Code:       "VISUAL.SEMANTIC",
+			Path:       path,
+			Metric:     value.metric,
+			Confidence: 0.8,
+			Message:    fmt.Sprintf("source %s %q differs from target %q.", value.metric, value.source, value.target),
+		})
 	}
 	return findings
 }
@@ -627,6 +684,339 @@ func VisualParityText(report VisualParityReport) string {
 		fmt.Fprintf(&b, "  [%s] %s%s %s%s: %s\n", finding.Severity, finding.Code, metric, finding.Path, confidence, finding.Message)
 	}
 	return b.String()
+}
+
+func visualSemantics(node Node, metrics VisualMetric) VisualSemantic {
+	semantics := VisualSemantic{
+		Role:        visualRole(node),
+		Composition: visualComposition(node),
+		Chrome:      visualChrome(node),
+		Emphasis:    visualEmphasis(node, metrics),
+		Density:     visualDensity(node, metrics),
+		Interaction: visualInteraction(node),
+		Media:       visualMedia(node),
+		Alignment:   visualAlignment(node),
+		State:       visualState(node),
+		Boundary:    visualBoundary(node),
+	}
+	return semantics
+}
+
+func visualRole(node Node) string {
+	switch node.Kind {
+	case KindRoot:
+		return "root"
+	case KindGeometryReader:
+		return "geometry-dependent-region"
+	case KindVerticalStack, KindHorizontalStack, KindOverlayStack, KindGrid, KindSplitView:
+		return "layout-region"
+	case KindScrollView:
+		return "scroll-region"
+	case KindList:
+		return "collection"
+	case KindText:
+		return "text"
+	case KindTextField:
+		return "text-entry"
+	case KindButton:
+		return "action"
+	case KindImage:
+		if node.Decorative {
+			return "decorative-image"
+		}
+		return "image"
+	case KindSlider:
+		return "range"
+	case KindToggle:
+		return "selection"
+	case KindSpacer:
+		return "flexible-space"
+	case KindDivider:
+		return "separator"
+	case KindConditional:
+		return "conditional-region"
+	case KindLoop:
+		return "repeated-region"
+	case KindColor:
+		return "surface"
+	case KindComponent:
+		return componentVisualRole(node)
+	default:
+		return string(node.Kind)
+	}
+}
+
+func componentVisualRole(node Node) string {
+	name := lowerVisualName(node)
+	switch {
+	case strings.Contains(name, "tab"):
+		return "tab-region"
+	case strings.Contains(name, "toolbar"), strings.Contains(name, "commandbar"), strings.Contains(name, "appbar"):
+		return "toolbar"
+	case strings.Contains(name, "navigation"), strings.Contains(name, "sidebar"), strings.Contains(name, "splitview"):
+		return "navigation-region"
+	case strings.Contains(name, "media"), strings.Contains(name, "player"), strings.Contains(name, "video"), strings.Contains(name, "audio"):
+		return "media-region"
+	case strings.Contains(name, "list"), strings.Contains(name, "table"), strings.Contains(name, "gridview"):
+		return "collection"
+	default:
+		return "native-component"
+	}
+}
+
+func visualComposition(node Node) string {
+	switch node.Kind {
+	case KindVerticalStack:
+		return "linear-vertical"
+	case KindHorizontalStack:
+		return "linear-horizontal"
+	case KindOverlayStack:
+		return "overlay"
+	case KindGrid:
+		if node.Properties["xaml.Grid.RowDefinitions"] != "" || node.Properties["xaml.Grid.ColumnDefinitions"] != "" {
+			return "track-grid"
+		}
+		return "grid"
+	case KindSplitView:
+		return "split"
+	case KindScrollView:
+		return "scroll"
+	case KindList:
+		return "virtualized-list"
+	case KindSpacer:
+		return "flex"
+	case KindDivider:
+		return "rule"
+	case KindComponent:
+		return componentComposition(node)
+	default:
+		return ""
+	}
+}
+
+func componentComposition(node Node) string {
+	name := lowerVisualName(node)
+	switch {
+	case strings.Contains(name, "tab"):
+		return "tabbed"
+	case strings.Contains(name, "toolbar"), strings.Contains(name, "commandbar"), strings.Contains(name, "appbar"):
+		return "command-strip"
+	case strings.Contains(name, "navigation"), strings.Contains(name, "sidebar"):
+		return "navigation-shell"
+	case strings.Contains(name, "splitview"):
+		return "split"
+	case strings.Contains(name, "media"), strings.Contains(name, "player"), strings.Contains(name, "video"), strings.Contains(name, "audio"):
+		return "media-stage"
+	default:
+		return "native"
+	}
+}
+
+func visualChrome(node Node) string {
+	name := lowerVisualName(node)
+	switch {
+	case hasAnyVisualName(name, "titlebar", "windowtitle", "caption"):
+		return "titlebar"
+	case hasAnyVisualName(name, "toolbar", "commandbar", "appbar"):
+		return "toolbar"
+	case hasAnyVisualName(name, "sidebar", "singers", "navigation", "nav"):
+		return "sidebar"
+	case hasAnyVisualName(name, "statusbar", "footer"):
+		return "statusbar"
+	case hasAnyVisualName(name, "tabbar", "tabs", "segmented"):
+		return "tabbar"
+	case hasAnyVisualName(name, "card", "panel", "pane", "groupbox", "border"):
+		return "panel"
+	case hasAnyVisualName(name, "player", "media", "video", "lyrics", "eq"):
+		return "media-panel"
+	case hasAnyVisualName(name, "history", "queue", "soundboard", "table"):
+		return "content-panel"
+	default:
+		return ""
+	}
+}
+
+func visualEmphasis(node Node, metrics VisualMetric) string {
+	name := lowerVisualName(node)
+	switch {
+	case hasAnyVisualName(name, "primary", "accent", "selected", "active"):
+		return "primary"
+	case hasAnyVisualName(name, "secondary", "subtle", "caption", "muted", "placeholder"):
+		return "secondary"
+	case hasAnyVisualName(name, "danger", "destructive", "delete", "remove"):
+		return "destructive"
+	case node.Kind == KindText && metrics.FontSize >= 20:
+		return "title"
+	case node.Kind == KindButton && metrics.MinHeight >= 44:
+		return "prominent-action"
+	case node.Kind == KindDivider || node.Decorative:
+		return "structural"
+	default:
+		return ""
+	}
+}
+
+func visualDensity(node Node, metrics VisualMetric) string {
+	value := firstPositiveNumber(0, metrics.MinHeight, metrics.Height)
+	if value == 0 {
+		value = firstPositiveNumber(0, metrics.Spacing, metrics.Padding)
+	}
+	switch {
+	case value > 0 && value < 30:
+		return "compact"
+	case value >= 44:
+		return "spacious"
+	case value > 0:
+		return "regular"
+	default:
+		return ""
+	}
+}
+
+func visualInteraction(node Node) string {
+	switch node.Kind {
+	case KindButton:
+		return "press"
+	case KindTextField:
+		return "edit-text"
+	case KindToggle:
+		return "toggle"
+	case KindSlider:
+		return "adjust"
+	case KindScrollView, KindList:
+		return "scroll"
+	case KindImage:
+		if node.Decorative {
+			return "none"
+		}
+	case KindComponent:
+		name := lowerVisualName(node)
+		switch {
+		case hasAnyVisualName(name, "button", "command", "toolbar", "appbar"):
+			return "command"
+		case hasAnyVisualName(name, "tab"):
+			return "select-view"
+		case hasAnyVisualName(name, "player", "media", "video", "audio"):
+			return "media-control"
+		}
+	}
+	return ""
+}
+
+func visualMedia(node Node) string {
+	name := lowerVisualName(node)
+	switch {
+	case node.Kind == KindImage && node.Decorative:
+		return "decorative"
+	case node.Kind == KindImage:
+		return "image"
+	case hasAnyVisualName(name, "video", "mediaelement"):
+		return "video"
+	case hasAnyVisualName(name, "audio", "sound", "music"):
+		return "audio"
+	case hasAnyVisualName(name, "lyrics", "eq", "equalizer"):
+		return "music-display"
+	default:
+		return ""
+	}
+}
+
+func visualAlignment(node Node) string {
+	values := []string{
+		node.Properties["xaml.HorizontalAlignment"],
+		node.Properties["xaml.VerticalAlignment"],
+		swiftModifierArgument(node, "frame", "alignment"),
+	}
+	out := []string{}
+	for _, value := range values {
+		value = compactVisualToken(value)
+		if value != "" {
+			out = append(out, value)
+		}
+	}
+	return strings.Join(out, "/")
+}
+
+func visualState(node Node) string {
+	name := lowerVisualName(node)
+	switch {
+	case hasAnyVisualName(name, "selected", "active", "current"):
+		return "selected"
+	case hasAnyVisualName(name, "disabled", "inactive"):
+		return "disabled"
+	case hasAnyVisualName(name, "paused"):
+		return "paused"
+	case hasAnyVisualName(name, "playing", "live"):
+		return "active"
+	default:
+		return ""
+	}
+}
+
+func visualBoundary(node Node) string {
+	if value := node.Properties["componentBoundary"]; value != "" {
+		return value
+	}
+	if value := node.Properties["requiresNativeImplementation"]; value != "" {
+		return "native-required:" + value
+	}
+	return ""
+}
+
+func lowerVisualName(node Node) string {
+	parts := []string{
+		string(node.Kind),
+		node.Expression,
+		node.VisibleLabel,
+		node.AccessibleName,
+		node.Identifier,
+		node.Placeholder,
+		node.Resource,
+		node.Properties["xamlElement"],
+		node.Properties["xaml.Name"],
+		node.Properties["xaml.AutomationId"],
+		node.Properties["xaml.Style"],
+		node.Properties["swiftuiConstruct"],
+		node.Properties["qtConstruct"],
+		node.Properties["juceConstruct"],
+		node.Properties["qt.arguments"],
+		node.Properties["swiftui.arguments"],
+		node.Properties["juce.arguments"],
+	}
+	for _, modifier := range node.Modifiers {
+		parts = append(parts, modifier.Name, modifier.Arguments)
+	}
+	return strings.ToLower(strings.Join(parts, " "))
+}
+
+func hasAnyVisualName(value string, needles ...string) bool {
+	for _, needle := range needles {
+		if strings.Contains(value, needle) {
+			return true
+		}
+	}
+	return false
+}
+
+func swiftModifierArgument(node Node, modifierName, argumentName string) string {
+	for _, modifier := range node.Modifiers {
+		if modifier.Name != modifierName {
+			continue
+		}
+		pattern := regexp.MustCompile(regexp.QuoteMeta(argumentName) + `\s*:\s*([._A-Za-z0-9]+)`)
+		match := pattern.FindStringSubmatch(modifier.Arguments)
+		if len(match) == 2 {
+			return match[1]
+		}
+	}
+	return ""
+}
+
+func compactVisualToken(value string) string {
+	value = strings.TrimSpace(value)
+	value = strings.Trim(value, "\"'")
+	value = strings.TrimPrefix(value, ".")
+	return strings.ToLower(value)
 }
 
 var visualNumberPattern = regexp.MustCompile(`-?\d+(?:\.\d+)?`)

@@ -33,7 +33,7 @@ reviewable, and useful for both people and automation.
 ```sh
 git clone https://github.com/cshaiku/loom.git loom
 cd loom
-go test ./...
+make test
 go vet ./...
 go run ./cmd/loom verify --json
 ```
@@ -52,6 +52,8 @@ Run the sample workflow:
 - Call out parser, generator, translation, accessibility, security, and
   cross-platform impact explicitly.
 - Keep generated artifacts and dependency churn out of unrelated changes.
+- Keep docs, commands, and generated artifact expectations in sync when command
+  behavior changes.
 
 ## Mutation Policy
 
@@ -63,3 +65,10 @@ metadata must stay accurate in the command catalog.
 
 Do not open public issues for suspected vulnerabilities. Follow
 [SECURITY.md](SECURITY.md).
+
+## Review Workflow
+
+1. Run the targeted test path first, then `make test`.
+2. Verify command output JSON with `--json`.
+3. Run `loom project:build` where output surfaces are changed.
+4. Update `docs` and `CHANGELOG.md` for observable behavior changes.

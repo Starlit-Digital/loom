@@ -74,6 +74,107 @@ func GenerateSwiftUI(analysis Analysis, viewName string) GeneratedArtifactReport
 	return GeneratedArtifactReport{"1", generatedStatus(diagnostics), analysis.SourcePath, sourceDialect(analysis), "swiftui", analysis.RootView, analysis.Component, "swift", b.String(), diagnostics}
 }
 
+func GenerateJUCE(analysis Analysis, className string) GeneratedArtifactReport {
+	className = sanitizeIdentifier(firstNonEmpty(className, analysis.Component, "GeneratedComponent"))
+	fields := []juceField{}
+	var walk func(Node)
+	walk = func(node Node) {
+		field := juceFieldFor(node, len(fields))
+		if field.Type != "" {
+			fields = append(fields, field)
+		}
+		for _, child := range node.Children {
+			walk(child)
+		}
+	}
+	for _, child := range analysis.Layout.Children {
+		walk(child)
+	}
+
+	var b strings.Builder
+	b.WriteString("#pragma once\n\n")
+	b.WriteString("#include <JuceHeader.h>\n\n")
+	fmt.Fprintf(&b, "class %s : public juce::Component\n{\n", className)
+	b.WriteString("public:\n")
+	fmt.Fprintf(&b, "    %s()\n", className)
+	b.WriteString("    {\n")
+	for _, field := range fields {
+		for _, line := range field.Setup {
+			fmt.Fprintf(&b, "        %s\n", line)
+		}
+		fmt.Fprintf(&b, "        addAndMakeVisible(%s);\n", field.Name)
+	}
+	b.WriteString("    }\n\n")
+	b.WriteString("    void resized() override\n")
+	b.WriteString("    {\n")
+	b.WriteString("        auto area = getLocalBounds().reduced(8);\n")
+	for _, field := range fields {
+		height := 32
+		switch field.Kind {
+		case KindText:
+			height = 24
+		case KindList:
+			height = 120
+		case KindImage, KindColor, KindComponent:
+			height = 80
+		case KindSpacer:
+			height = 8
+		case KindDivider:
+			height = 1
+		}
+		fmt.Fprintf(&b, "        %s.setBounds(area.removeFromTop(%d));\n", field.Name, height)
+		if height > 1 {
+			b.WriteString("        area.removeFromTop(8);\n")
+		}
+	}
+	b.WriteString("    }\n\n")
+	b.WriteString("private:\n")
+	if len(fields) == 0 {
+		b.WriteString("    // No supported JUCE components were found in the source layout.\n")
+	}
+	for _, field := range fields {
+		fmt.Fprintf(&b, "    %s %s%s;\n", field.Type, field.Name, field.Initializer)
+	}
+	b.WriteString("\n    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(" + className + ")\n")
+	b.WriteString("};\n")
+
+	diagnostics := generatorDiagnostics(analysis)
+	return GeneratedArtifactReport{"1", generatedStatus(diagnostics), analysis.SourcePath, sourceDialect(analysis), "juce", analysis.RootView, analysis.Component, "hpp", b.String(), diagnostics}
+}
+
+type juceField struct {
+	Kind        NodeKind
+	Type        string
+	Name        string
+	Initializer string
+	Setup       []string
+}
+
+func juceFieldFor(node Node, index int) juceField {
+	name := fmt.Sprintf("%s%d", sanitizeIdentifier(string(node.Kind)), index+1)
+	label := firstNonEmpty(node.VisibleLabel, node.Placeholder, unquote(node.Arguments), node.Expression)
+	switch node.Kind {
+	case KindVerticalStack, KindHorizontalStack, KindOverlayStack, KindGrid, KindScrollView, KindSpacer, KindDivider, KindColor, KindComponent, KindUnsupported:
+		return juceField{Kind: node.Kind, Type: "juce::Component", Name: name}
+	case KindList:
+		return juceField{Kind: node.Kind, Type: "juce::ListBox", Name: name}
+	case KindText:
+		return juceField{Kind: node.Kind, Type: "juce::Label", Name: name, Setup: []string{fmt.Sprintf("%s.setText(%q, juce::dontSendNotification);", name, label)}}
+	case KindTextField:
+		return juceField{Kind: node.Kind, Type: "juce::TextEditor", Name: name, Setup: []string{fmt.Sprintf("%s.setTextToShowWhenEmpty(%q, juce::Colours::grey);", name, firstNonEmpty(node.Placeholder, label, "Text"))}}
+	case KindButton:
+		return juceField{Kind: node.Kind, Type: "juce::TextButton", Name: name, Initializer: fmt.Sprintf(" { %q }", firstNonEmpty(label, "Button"))}
+	case KindImage:
+		return juceField{Kind: node.Kind, Type: "juce::ImageComponent", Name: name}
+	case KindSlider:
+		return juceField{Kind: node.Kind, Type: "juce::Slider", Name: name}
+	case KindToggle:
+		return juceField{Kind: node.Kind, Type: "juce::ToggleButton", Name: name, Initializer: fmt.Sprintf(" { %q }", firstNonEmpty(label, "Option"))}
+	default:
+		return juceField{}
+	}
+}
+
 func GenerateContracts(analysis Analysis, target string) ContractReport {
 	items := []ContractItem{}
 	var walk func(Node, string)

@@ -12,6 +12,8 @@ compile:
 test:
 	$(GO) test ./...
 
-.PHONY: clean
+.PHONY: clean screenshots
 clean:
 	rm -rf .build
+screenshots:
+	bash scripts/capture-loom-screenshots.sh

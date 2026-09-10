@@ -1,16 +1,15 @@
-# loom
+# Loom
 
 Version: **1.0.0**
 
-loom is a cross-platform Go CLI for UI layout analysis, generation planning,
+Loom is a cross-platform Go CLI for UI layout analysis, generation planning,
 translation, pattern catalog validation, transfer planning, and workflow
 diagnostics.
 
-The product goal for `v1.0.0` is an analyzer, generator, and translator for
-moving UI layout intent between SwiftUI, WinUI XAML, and Qt. The current
-`1.0.0` release includes analyzer reports, transfer planning, component graphs,
-reviewable generator scaffolds, target contracts, and manifest-directed project
-build bundles.
+The project ships as an analyzer, generator, and translator for moving UI layout
+intent between SwiftUI, WinUI XAML, Qt, and JUCE. The `1.0.0` release includes
+analyzer reports, transfer planning, component graphs, reviewable generator
+scaffolds, target contracts, and manifest-directed project build bundles.
 
 ## Local developer installation
 
@@ -32,7 +31,6 @@ Run `python3 scripts/test-local-install.py` for isolated installer regression ch
 The installed pattern catalog is `$HOME/.local/share/loom/patterns`; verify it from outside the checkout with `loom patterns:validate --json`.
 
 
-
 ## What Loom Does Today
 
 - Parse WinUI XAML and normalize it into loom's shared layout model (`inspect:xaml`).
@@ -40,6 +38,8 @@ The installed pattern catalog is `$HOME/.local/share/loom/patterns`; verify it f
   (`inspect:swiftui`, `inspect:source`).
 - Parse common Qt QML, Qt Designer UI, and Qt C++ layout constructs into the
   same shared model (`inspect:qt`, `inspect:source`).
+- Parse common JUCE C++ Component and widget constructs into the same shared
+  model (`inspect:juce`, `inspect:source`).
 - Extract intrinsic font material properties from supplied TrueType, OpenType,
   TrueType Collection, and WOFF font files or installed family names
   (`inspect:font`).
@@ -49,8 +49,9 @@ The installed pattern catalog is `$HOME/.local/share/loom/patterns`; verify it f
 - Transfer-plan layout compatibility in both WinUI → macOS and macOS/SwiftUI →
   Windows directions (`patterns:transfer`).
 - Compare layout parity across supported source dialects (`inspect:parity`).
-- Compare profile-normalized visual metrics such as typography, spacing, control
-  minimums, padding, margins, and sizing (`inspect:visual-parity`).
+- Compare profile-normalized visual metrics and semantic visual roles such as
+  toolbar, sidebar, media, tab, collection, emphasis, density, and native
+  component boundaries (`inspect:visual-parity`).
 - Audit accessibility/layout quality for unsupported boundaries, small targets,
   malformed or redundant structures, and scan-friendly risks (`accessibility:audit`).
 - Run manifest validation (`config:validate` / `config:schema`).
@@ -58,8 +59,9 @@ The installed pattern catalog is `$HOME/.local/share/loom/patterns`; verify it f
 - Run manifest-directed analysis builds that write validation, analysis, graph,
   generated scaffold, contract, transfer, parity, and summary artifacts
   (`project:build`).
-- Generate reviewable WinUI XAML fragments, SwiftUI scaffolds, and target
-  contracts (`generate:xaml`, `generate:swiftui`, `generate:contracts`).
+- Generate reviewable WinUI XAML fragments, SwiftUI scaffolds, JUCE Component
+  scaffolds, and target contracts (`generate:xaml`, `generate:swiftui`,
+  `generate:juce`, `generate:contracts`).
 - Report errors for source analysis, XAML parsing, manifests, and patterns
   (`inspect:errors`).
 - Provide curated cross-platform error guidance and suggested fixes (`suggestions:os-errors`).
@@ -79,10 +81,19 @@ installed with `make build`, the same catalog is copied to
 `$HOME/.local/share/loom/patterns` so the installed `loom` command can validate,
 lint, list, export, and transfer-plan against loom's own pattern definitions.
 
-Generator output is intentionally conservative. It is suitable for review,
-handoff, and project-build evidence, but v1.0 still needs frozen JSON schemas,
-release artifacts, and native smoke evidence before stable support is claimed.
+Generator output is intentionally conservative. It is designed to be reviewable,
+low-risk, and useful for handoff workflows.
 
+## Quick Start
+
+```sh
+make build
+./examples/sampleapp/analyze-sample-app.sh --overwrite
+loom project:build examples/sampleapp/loom.json --output-dir examples/sampleapp/generated/project-build --overwrite --json
+```
+
+You should see generated analysis JSON and generated artifact drafts in
+`examples/sampleapp/generated/`.
 
 ## Build And Test
 
@@ -103,6 +114,7 @@ loom checks:command-catalog --json
 loom inspect:source contentview.swift --json
 loom inspect:swiftui contentview.swift --format json
 loom inspect:qt mainwindow.qml --format json
+loom inspect:juce MainComponent.cpp --format json
 loom inspect:font Inter.ttf --json
 loom inspect:font --family "Segoe UI" --json
 loom inspect:xaml mainwindow.xaml --format json
@@ -115,11 +127,13 @@ loom accessibility:audit mainwindow.xaml --format json --fail-on warning
 loom graph:components examples/sampleapp --format dot --output component-graph.dot
 loom generate:xaml contentview.swift --output generated.xaml
 loom generate:swiftui mainwindow.xaml --view-name MainWindowScaffold --output MainWindowScaffold.swift
+loom generate:juce contentview.swift --class-name MainComponent --output MainComponent.hpp
 loom generate:contracts contentview.swift --target winui3 --json
 loom patterns:lint
 loom patterns:transfer mainwindow.xaml --from winui3 --to macos
 loom patterns:transfer contentview.swift --from swiftui --to windows
 loom patterns:transfer mainwindow.qml --from qt --to windows
+loom patterns:transfer contentview.swift --from swiftui --to juce
 loom project:build examples/sampleapp/loom.json --output-dir examples/sampleapp/generated/project-build --overwrite --json
 ```
 
@@ -131,6 +145,11 @@ loom project:build examples/sampleapp/loom.json --output-dir examples/sampleapp/
 
 The sample produces analysis, audit, transfer, component graph, project build,
 parity, and visual-parity reports under `examples/sampleapp/generated/`.
+
+## Recommended Screenshots
+
+- [docs/screenshot-targets.md](docs/screenshot-targets.md) lists capture-ready
+  command outputs and optional homepage screenshots that explain Loom usage quickly.
 
 ## Repository Layout
 
@@ -152,6 +171,7 @@ parity, and visual-parity reports under `examples/sampleapp/generated/`.
 - [docs/deprecations.md](docs/deprecations.md)
 - [docs/release-checklist.md](docs/release-checklist.md)
 - [docs/release-evidence.md](docs/release-evidence.md)
+- [docs/screenshot-targets.md](docs/screenshot-targets.md)
 - [CONTRIBUTING.md](CONTRIBUTING.md)
 - [SECURITY.md](SECURITY.md)
 - [TESTING.md](TESTING.md)
@@ -165,7 +185,7 @@ Loom is open source under the 0BSD license. See [LICENSE](LICENSE).
 1. Ensure `VERSION` and `internal/loom/catalog.go` version constants match.
 2. Run `make test`, `go vet ./...`, and `go run ./cmd/loom verify --json`.
 3. Run the sample workflow with `--overwrite`.
-4. Review [TODO.md](TODO.md) before declaring `v1.0.0`.
+4. Review [TODO.md](TODO.md) before cutting the next version.
 5. Run `git add`, commit, and push.
 6. Tag the release, e.g.:
    `git tag -a vX.Y.Z -m "Loom X.Y.Z"; git push --tags`.

@@ -22,17 +22,17 @@ Commands that inspect an input usually also include `sourcePath`, `rootView`,
 
 | Command | Primary report type | Stable body fields |
 | --- | --- | --- |
-| `inspect:source`, `inspect:swiftui`, `inspect:xaml`, `inspect:qt` | `Analysis` | `sourcePath`, `rootView`, `component`, `syntaxNodeCount`, `layout`, `diagnostics` |
+| `inspect:source`, `inspect:swiftui`, `inspect:xaml`, `inspect:qt`, `inspect:juce` | `Analysis` | `sourcePath`, `rootView`, `component`, `syntaxNodeCount`, `layout`, `diagnostics` |
 | `inspect:ascii` | text only | Not a JSON surface. |
 | `inspect:errors` | `LoomErrorInspectionReport` | `inspectedKind`, `source`, `findings` |
 | `inspect:font` | `FontInspectionReport` | `source`, `family`, `faces`, `diagnostics` |
 | `inspect:parity` | `ParityReport` | `sourcePath`, `targetPath`, `sourceDialect`, `targetDialect`, `sourceCount`, `targetCount`, `findings` |
-| `inspect:visual-parity` | `VisualParityReport` | `sourcePath`, `targetPath`, `sourceDialect`, `targetDialect`, `profile`, `summary`, `findings`, `diagnostics` |
+| `inspect:visual-parity` | `VisualParityReport` | `sourcePath`, `targetPath`, `sourceDialect`, `targetDialect`, `profile`, `sourceEntries`, `targetEntries`, `findings` |
 | `accessibility:audit` | `AuditReport` | `sourcePath`, `rootView`, `component`, `summary`, `findings`, `diagnostics` |
 | `patterns:validate`, `patterns:lint` | `PatternValidationReport` | `directory`, `patternCount`, `issues` |
 | `patterns:transfer` | `TransferReport` | `sourcePath`, `from`, `to`, `rootView`, `component`, `asciiPattern`, `summary`, `items`, `diagnostics` |
 | `graph:components` | `ComponentGraphReport` | `source`, `root`, `components`, `edges`, `diagnostics` |
-| `generate:xaml`, `generate:swiftui` | `GeneratedArtifactReport` | `sourcePath`, `from`, `to`, `rootView`, `component`, `outputKind`, `text`, `diagnostics` |
+| `generate:xaml`, `generate:swiftui`, `generate:juce` | `GeneratedArtifactReport` | `sourcePath`, `from`, `to`, `rootView`, `component`, `outputKind`, `text`, `diagnostics` |
 | `generate:contracts` | `ContractReport` | `sourcePath`, `target`, `rootView`, `component`, `contracts`, `diagnostics` |
 | `project:build` | `ProjectBuildReport` | `project`, `manifestPath`, `projectRoot`, `outputDir`, `artifacts`, `diagnostics` |
 | `status` | `LoomStatusReport` | `version`, `workingDirectory`, `commands`, `patternDirectory`, `patternStatus`, `patternCount`, `issues` |

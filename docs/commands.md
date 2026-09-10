@@ -1,18 +1,30 @@
 # loom commands
 
-## Go runtime command surface
+## Command Surface (Curated by command family)
+
+### Health & Guardrails
 
 - `status`
 - `verify`
 - `checks:command-catalog`
 - `guards:summary`
 - `self-heal:plan`
+
+### Validation & Configuration
+
 - `config:validate`
 - `config:schema`
+
+### Accessibility
+
 - `accessibility:audit`
+
+### Inspection
+
 - `inspect:source`
 - `inspect:swiftui`
 - `inspect:qt`
+- `inspect:juce`
 - `inspect:xaml`
 - `inspect:ascii`
 - `inspect:errors`
@@ -20,16 +32,29 @@
 - `inspect:parity`
 - `inspect:visual-parity`
 - `graph:components`
+
+### Generation
+
 - `generate:xaml`
 - `generate:swiftui`
+- `generate:juce`
 - `generate:contracts`
+
+### Patterns
+
 - `patterns:list`
 - `patterns:show`
 - `patterns:validate`
 - `patterns:lint`
 - `patterns:export`
 - `patterns:transfer`
+
+### Project Packaging
+
 - `project:build`
+
+### Diagnostics
+
 - `suggestions:os-errors`
 
 ## Generator And Translator Commands
@@ -37,6 +62,17 @@
 Generator output is reviewable scaffold output. It preserves unsupported
 component boundaries instead of silently inventing native behavior, and it keeps
 file mutation behind explicit output or owned-region flags.
+
+## Quick Recipes
+
+- Start with health checks:
+  `loom status --json` -> `loom verify --json` -> `loom checks:command-catalog --json`
+- Inspect one file across formats:
+  `loom inspect:swiftui examples/sampleapp/contentview.swift --format json`
+  `loom inspect:xaml examples/sampleapp/mainwindow.xaml --format json`
+- Generate and then handoff:
+  `loom generate:xaml examples/sampleapp/contentview.swift --output /tmp/generated.xaml`
+  `loom generate:juce examples/sampleapp/contentview.swift --class-name MainComponent --output /tmp/MainComponent.hpp`
 
 ## Notes
 
@@ -60,6 +96,7 @@ loom self-heal:plan
 loom inspect:source contentview.swift --json
 loom inspect:swiftui contentview.swift --format json
 loom inspect:qt mainwindow.qml --format json
+loom inspect:juce MainComponent.cpp --format json
 loom inspect:font Inter.ttf --json
 loom inspect:font --family "Segoe UI" --json
 loom inspect:errors mainwindow.xaml --kind xaml --json --fail-on error
@@ -71,10 +108,12 @@ loom graph:components examples/sampleapp --format dot --output component-graph.d
 loom generate:xaml contentview.swift --output generated.xaml
 loom generate:xaml contentview.swift --replace-region mainwindow.xaml --region-id main --overwrite
 loom generate:swiftui mainwindow.xaml --view-name MainWindowScaffold --output MainWindowScaffold.swift
+loom generate:juce contentview.swift --class-name MainComponent --output MainComponent.hpp
 loom generate:contracts contentview.swift --target winui3 --json
 loom patterns:transfer mainwindow.xaml --from winui3 --to macos --format json
 loom patterns:transfer contentview.swift --from swiftui --to windows --format json
 loom patterns:transfer mainwindow.qml --from qt --to windows --format json
+loom patterns:transfer contentview.swift --from swiftui --to juce --format json
 loom accessibility:audit mainwindow.xaml --fail-on warning
 loom inspect:ascii mainwindow.xaml --output layout.txt --line-ending crlf
 loom project:build examples/sampleapp/loom.json --output-dir examples/sampleapp/generated/project-build --overwrite --json
@@ -95,8 +134,14 @@ defaults before comparison. It can also override either side's typography from
 real font material with `--source-font`, `--target-font`, `--source-font-family`,
 or `--target-font-family`.
 
-Visual parity JSON includes per-node `provenance` for metrics and per-finding
-confidence. Provenance marks values as `source`, `font-material`,
+Visual parity JSON includes per-node semantic descriptors, per-node
+`provenance` for metrics, and per-finding confidence. Semantic descriptors flag
+source-grounded differences in visual role, composition, chrome, emphasis,
+density, interaction, media treatment, alignment, state, and native component
+boundaries. This lets Loom report cases where shared numeric constants match but
+one platform still renders an old shell approximation, toolbar, media panel, tab
+region, sidebar, or collection differently. Provenance marks values as `source`,
+`font-material`,
 `resolved-resource`, `style-setter`, `explicit-style-setter`, `profile`,
 `resource-reference`, `default-profile`, or `unknown`, so reports distinguish
 measured, explicitly provided, locally resolved, styled, referenced, and assumed

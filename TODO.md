@@ -11,3 +11,5 @@
 - Decide whether releases should publish Homebrew, direct archives, `go install`,
   or all three.
 - Replace generic security contact if the project gets a dedicated address.
+- Add and verify a developer onboarding guide with screenshot targets.
+  - Complete. Added [`docs/screenshot-targets.md`](docs/screenshot-targets.md), and `scripts/capture-loom-screenshots.sh`.

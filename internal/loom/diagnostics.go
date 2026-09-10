@@ -15,6 +15,7 @@ const (
 	LoomErrorInspectionSwift    LoomErrorInspectionKind = "swift"
 	LoomErrorInspectionXAML     LoomErrorInspectionKind = "xaml"
 	LoomErrorInspectionQt       LoomErrorInspectionKind = "qt"
+	LoomErrorInspectionJUCE     LoomErrorInspectionKind = "juce"
 	LoomErrorInspectionManifest LoomErrorInspectionKind = "manifest"
 	LoomErrorInspectionPatterns LoomErrorInspectionKind = "patterns"
 )
@@ -275,9 +276,9 @@ func DiagnosticsProjectConfigValidate(path, projectRoot string) LoomManifestVali
 		issues = append(issues, LoomManifestValidationIssue{Severity: SeverityError, Code: "manifest.project.empty", Path: "project", Detail: "Project name is empty.", Fix: "Set project to a stable display name."})
 	}
 	if strings.TrimSpace(manifest.Target) == "" {
-		issues = append(issues, LoomManifestValidationIssue{Severity: SeverityError, Code: "manifest.target.empty", Path: "target", Detail: "Target is empty.", Fix: "Set target to winui3."})
-	} else if strings.ToLower(manifest.Target) != "winui3" {
-		issues = append(issues, LoomManifestValidationIssue{Severity: SeverityError, Code: "manifest.target.unsupported", Path: "target", Detail: fmt.Sprintf("Unsupported target %s.", manifest.Target), Fix: "Set target to winui3."})
+		issues = append(issues, LoomManifestValidationIssue{Severity: SeverityError, Code: "manifest.target.empty", Path: "target", Detail: "Target is empty.", Fix: "Set target to winui3, swiftui, qt, or juce."})
+	} else if !validPatternPlatform(manifest.Target) {
+		issues = append(issues, LoomManifestValidationIssue{Severity: SeverityError, Code: "manifest.target.unsupported", Path: "target", Detail: fmt.Sprintf("Unsupported target %s.", manifest.Target), Fix: "Set target to winui3, swiftui, qt, or juce."})
 	}
 	if strings.TrimSpace(manifest.Source) == "" {
 		issues = append(issues, LoomManifestValidationIssue{Severity: SeverityError, Code: "manifest.source.empty", Path: "source", Detail: "Source is empty.", Fix: "Provide a source file path."})
@@ -366,6 +367,8 @@ func InspectErrors(path string, kind, rootView, component, failOn string) LoomEr
 		findings = inspectXAMLErrors(path)
 	case LoomErrorInspectionQt:
 		findings = inspectQtErrors(path)
+	case LoomErrorInspectionJUCE:
+		findings = inspectJUCEErrors(path)
 	case LoomErrorInspectionManifest:
 		findings = inspectManifestErrors(path)
 	case LoomErrorInspectionPatterns:
@@ -434,7 +437,7 @@ func ManifestSchemaJSON() (string, error) {
     "project": { "type": "string", "minLength": 1 },
     "source": { "type": "string", "minLength": 1 },
     "rootView": { "type": "string", "minLength": 1 },
-    "target": { "const": "winui3" },
+    "target": { "enum": ["winui3", "swiftui", "qt", "juce"] },
     "existingXaml": { "type": "string" },
     "referenceLayout": { "type": "string" },
     "translationGuide": { "type": "string" },
@@ -565,6 +568,9 @@ func inferErrorInspectionKind(path string) LoomErrorInspectionKind {
 	case ".xaml", ".xml":
 		return LoomErrorInspectionXAML
 	case ".qml", ".ui", ".cpp", ".cc", ".cxx", ".hpp", ".hh", ".h":
+		if looksLikeJUCESource(path) {
+			return LoomErrorInspectionJUCE
+		}
 		return LoomErrorInspectionQt
 	case ".json":
 		if strings.HasSuffix(strings.ToLower(filepath.Base(path)), ".pattern.json") {
@@ -624,6 +630,22 @@ func inspectQtErrors(path string) []LoomErrorInspectionFinding {
 	analysis, err := AnalyzeQt(path)
 	if err != nil {
 		return []LoomErrorInspectionFinding{{Severity: SeverityError, Code: "QT.SOURCE", Source: path, Message: err.Error()}}
+	}
+	findings := []LoomErrorInspectionFinding{}
+	for _, diagnostic := range analysis.Diagnostics {
+		finding := LoomErrorInspectionFinding{Severity: diagnostic.Severity, Code: diagnostic.Code, Source: path, Message: diagnostic.Message}
+		if diagnostic.SourceOffset != nil {
+			finding.Offset = diagnostic.SourceOffset
+		}
+		findings = append(findings, finding)
+	}
+	return findings
+}
+
+func inspectJUCEErrors(path string) []LoomErrorInspectionFinding {
+	analysis, err := AnalyzeJUCE(path)
+	if err != nil {
+		return []LoomErrorInspectionFinding{{Severity: SeverityError, Code: "JUCE.SOURCE", Source: path, Message: err.Error()}}
 	}
 	findings := []LoomErrorInspectionFinding{}
 	for _, diagnostic := range analysis.Diagnostics {

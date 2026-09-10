@@ -66,6 +66,27 @@ func fixtureQtCPP(t *testing.T, body string) string {
 	return path
 }
 
+func fixtureJUCE(t *testing.T, body string) string {
+	t.Helper()
+	dir := t.TempDir()
+	path := filepath.Join(dir, "MainComponent.cpp")
+	source := `#include <JuceHeader.h>
+
+class MainComponent : public juce::Component
+{
+public:
+  MainComponent()
+  {
+` + body + `
+  }
+};
+`
+	if err := os.WriteFile(path, []byte(source), 0644); err != nil {
+		t.Fatal(err)
+	}
+	return path
+}
+
 func fixtureFont(t *testing.T, family, subfamily string) string {
 	t.Helper()
 	dir := t.TempDir()
@@ -322,6 +343,31 @@ auto *save = new QPushButton("Save");`)
 	}
 }
 
+func TestAnalyzeJUCECommonComponents(t *testing.T) {
+	path := fixtureJUCE(t, `auto title = std::make_unique<juce::Label>();
+title->setText("Title", juce::dontSendNotification);
+auto save = std::make_unique<juce::TextButton>("Save");
+auto gain = std::make_unique<juce::Slider>();
+auto enabled = std::make_unique<juce::ToggleButton>("Enabled");
+addAndMakeVisible(*title);
+addAndMakeVisible(*save);
+addAndMakeVisible(*gain);
+addAndMakeVisible(*enabled);`)
+	analysis, err := AnalyzeJUCE(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if analysis.Layout.Properties["sourceDialect"] != "juce" {
+		t.Fatalf("expected juce dialect, got %#v", analysis.Layout.Properties)
+	}
+	kinds := flattenedKinds(analysis.Layout)
+	for _, expected := range []NodeKind{KindText, KindButton, KindSlider, KindToggle} {
+		if !containsNodeKind(kinds, expected) {
+			t.Fatalf("expected JUCE kind %s in %#v", expected, kinds)
+		}
+	}
+}
+
 func containsNodeKind(values []NodeKind, expected NodeKind) bool {
 	for _, value := range values {
 		if value == expected {
@@ -347,6 +393,37 @@ func TestQtToWindowsTransferUsesWinUIMappings(t *testing.T) {
 	}
 	if report.From != "qt" || report.To != "windows" || report.Summary.Unsupported != 0 {
 		t.Fatalf("expected Qt to Windows transfer report, got %#v", report)
+	}
+}
+
+func TestSwiftUIToJUCETargetTransferUsesJUCEMappings(t *testing.T) {
+	path := fixtureSwiftUI(t, `VStack {
+  Text("Title")
+  Button("Save") {}
+}`)
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	if err := Run([]string{"patterns:transfer", path, "--from", "swiftui", "--to", "juce", "--format", "json"}, &stdout, &stderr); err != nil {
+		t.Fatal(err)
+	}
+	var report TransferReport
+	if err := json.Unmarshal(stdout.Bytes(), &report); err != nil {
+		t.Fatal(err)
+	}
+	if report.From != "swiftui" || report.To != "juce" || report.Summary.Unsupported != 0 {
+		t.Fatalf("expected SwiftUI to JUCE transfer report, got %#v", report)
+	}
+	foundButton := false
+	for _, item := range report.Items {
+		if item.Kind == KindButton {
+			foundButton = true
+			if !contains(item.TargetConstructs, "juce::TextButton") {
+				t.Fatalf("expected JUCE button mapping, got %#v", item)
+			}
+		}
+	}
+	if !foundButton {
+		t.Fatalf("expected button transfer item, got %#v", report.Items)
 	}
 }
 
@@ -457,6 +534,62 @@ func TestInspectVisualParityAcceptsNormalizingProfile(t *testing.T) {
 	}
 	if report.Status != "ok" || len(report.Findings) != 0 {
 		t.Fatalf("expected normalized visual profile to pass, got %#v", report)
+	}
+}
+
+func TestInspectVisualParityReportsSemanticDifferencesWithNormalizedMetrics(t *testing.T) {
+	swiftPath := fixtureSwiftUI(t, `MediaPanel {
+  Button("Play") {}
+}`)
+	xamlPath := filepath.Join(t.TempDir(), "mainwindow.xaml")
+	if err := os.WriteFile(xamlPath, []byte(`<CommandBar xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation">
+  <AppBarButton Label="Play" />
+</CommandBar>`), 0644); err != nil {
+		t.Fatal(err)
+	}
+	profilePath := filepath.Join(t.TempDir(), "visual-profile.json")
+	profile := `{
+  "schema_version": "1",
+  "platforms": {
+    "swiftui": {
+      "typography": { "fontFamily": "Inter", "fallbackFonts": ["Segoe UI"], "fontSize": 14, "kerning": 0, "lineHeight": 20, "baselineOffset": 0 },
+      "spacing": { "defaultPadding": 0, "defaultMargin": 0, "stackSpacing": 8 },
+      "controls": { "buttonMinHeight": 32, "textFieldMinHeight": 32, "toggleMinHeight": 32, "listRowMinHeight": 32 }
+    },
+    "winui3": {
+      "typography": { "fontFamily": "Inter", "fallbackFonts": ["Segoe UI"], "fontSize": 14, "kerning": 0, "lineHeight": 20, "baselineOffset": 0 },
+      "spacing": { "defaultPadding": 0, "defaultMargin": 0, "stackSpacing": 8 },
+      "controls": { "buttonMinHeight": 32, "textFieldMinHeight": 32, "toggleMinHeight": 32, "listRowMinHeight": 32 }
+    }
+  },
+  "tolerances": { "distance": 0.01, "typography": 0.01 }
+}`
+	if err := os.WriteFile(profilePath, []byte(profile), 0644); err != nil {
+		t.Fatal(err)
+	}
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	if err := Run([]string{"inspect:visual-parity", swiftPath, "--target", xamlPath, "--from", "swiftui", "--to", "winui3", "--profile", profilePath, "--json"}, &stdout, &stderr); err == nil {
+		t.Fatal("expected semantic visual parity differences to fail")
+	}
+	var report VisualParityReport
+	if err := json.Unmarshal(stdout.Bytes(), &report); err != nil {
+		t.Fatal(err)
+	}
+	found := false
+	for _, finding := range report.Findings {
+		if finding.Code == "VISUAL.SEMANTIC" && finding.Metric == "semantic.role" {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatalf("expected semantic role finding, got %#v", report.Findings)
+	}
+	if len(report.SourceEntries) == 0 || report.SourceEntries[0].Semantics.Role != "media-region" {
+		t.Fatalf("expected source media-region semantics, got %#v", report.SourceEntries)
+	}
+	if len(report.TargetEntries) == 0 || report.TargetEntries[0].Semantics.Role != "toolbar" {
+		t.Fatalf("expected target toolbar semantics, got %#v", report.TargetEntries)
 	}
 }
 
@@ -861,6 +994,20 @@ func TestInspectQtReportsDelimiterErrors(t *testing.T) {
 	}
 }
 
+func TestInspectJUCEReportsDelimiterErrors(t *testing.T) {
+	path := fixtureJUCE(t, `auto save = std::make_unique<juce::TextButton>("Broken";
+addAndMakeVisible(*save);`)
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	err := Run([]string{"inspect:errors", path, "--kind", "juce", "--format", "json", "--fail-on", "error"}, &stdout, &stderr)
+	if err == nil {
+		t.Fatal("expected malformed JUCE source to fail")
+	}
+	if !strings.Contains(stdout.String(), "JUCE.PARSE") {
+		t.Fatalf("expected JUCE parse finding, got %s", stdout.String())
+	}
+}
+
 func TestAnalyzeSwiftUICommonLayout(t *testing.T) {
 	path := fixtureSwiftUI(t, `VStack(spacing: 12) {
   Text("Hello")
@@ -1083,6 +1230,19 @@ func TestInspectSourceAutoDetectsSwiftUI(t *testing.T) {
 	}
 	if !strings.Contains(stdout.String(), `"sourceDialect": "swiftui"`) {
 		t.Fatalf("expected inspect:source to auto-detect SwiftUI, got %s", stdout.String())
+	}
+}
+
+func TestInspectSourceAutoDetectsJUCE(t *testing.T) {
+	path := fixtureJUCE(t, `auto save = std::make_unique<juce::TextButton>("Save");
+addAndMakeVisible(*save);`)
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	if err := Run([]string{"inspect:source", path, "--json"}, &stdout, &stderr); err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(stdout.String(), `"sourceDialect": "juce"`) {
+		t.Fatalf("expected inspect:source to auto-detect JUCE, got %s", stdout.String())
 	}
 }
 
@@ -1697,6 +1857,24 @@ func TestGenerateSwiftUIEmitsReviewableScaffold(t *testing.T) {
 	for _, needle := range []string{"struct MainScaffold: View", `Text("Title")`, `Button("Save") {}`} {
 		if !strings.Contains(stdout.String(), needle) {
 			t.Fatalf("expected generated SwiftUI to contain %q, got %s", needle, stdout.String())
+		}
+	}
+}
+
+func TestGenerateJUCEEmitsReviewableScaffold(t *testing.T) {
+	path := fixtureSwiftUI(t, `VStack {
+  Text("Title")
+  Button("Save") {}
+  Slider(value: .constant(0))
+}`)
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	if err := Run([]string{"generate:juce", path, "--class-name", "MainComponent"}, &stdout, &stderr); err != nil {
+		t.Fatal(err)
+	}
+	for _, needle := range []string{"class MainComponent : public juce::Component", "juce::Label", `setText("Title", juce::dontSendNotification)`, `juce::TextButton button3 { "Save" }`, "void resized() override"} {
+		if !strings.Contains(stdout.String(), needle) {
+			t.Fatalf("expected generated JUCE to contain %q, got %s", needle, stdout.String())
 		}
 	}
 }

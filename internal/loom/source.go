@@ -14,6 +14,8 @@ func AnalyzeByPlatform(path, platform string) (Analysis, error) {
 		return AnalyzeSwiftUI(path)
 	case "qt", "qml", "linux":
 		return AnalyzeQt(path)
+	case "juce":
+		return AnalyzeJUCE(path)
 	default:
 		return Analysis{}, fmt.Errorf("unsupported source platform %q for %s", platform, path)
 	}
@@ -25,7 +27,14 @@ func InferSourcePlatform(path string) string {
 		return "swiftui"
 	case ".xaml", ".xml":
 		return "winui3"
-	case ".qml", ".ui", ".cpp", ".cc", ".cxx", ".hpp", ".hh", ".h":
+	case ".jucer":
+		return "juce"
+	case ".cpp", ".cc", ".cxx", ".hpp", ".hh", ".h":
+		if looksLikeJUCESource(path) {
+			return "juce"
+		}
+		return "qt"
+	case ".qml", ".ui":
 		return "qt"
 	default:
 		return "winui3"

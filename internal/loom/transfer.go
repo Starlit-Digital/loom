@@ -153,6 +153,9 @@ func mapping(pattern Pattern, platform string) PatternMapping {
 			return mapping
 		}
 	}
+	if platform == "juce" {
+		return jucePatternMapping(pattern.Kind)
+	}
 	return PatternMapping{}
 }
 
@@ -164,6 +167,8 @@ func canonicalPatternPlatform(platform string) string {
 		return "winui3"
 	case "linux", "qtquick", "qtwidgets", "qml":
 		return "qt"
+	case "juce", "juce8", "juce7", "audio-plugin":
+		return "juce"
 	default:
 		return strings.ToLower(strings.TrimSpace(platform))
 	}
@@ -171,11 +176,60 @@ func canonicalPatternPlatform(platform string) string {
 
 func validPatternPlatform(platform string) bool {
 	switch canonicalPatternPlatform(platform) {
-	case "swiftui", "winui3", "qt":
+	case "swiftui", "winui3", "qt", "juce":
 		return true
 	default:
 		return false
 	}
+}
+
+func jucePatternMapping(kind NodeKind) PatternMapping {
+	constructs := []string{}
+	strategy := "Map through JUCE Components and explicit resized() bounds or project layout helpers."
+	caveats := []string{"JUCE layout is usually imperative; preserve the Loom ordering and sizing policy when writing resized()."}
+	switch kind {
+	case KindVerticalStack:
+		constructs = []string{"juce::Component", "resized() vertical bounds"}
+	case KindHorizontalStack:
+		constructs = []string{"juce::FlexBox", "resized() horizontal bounds"}
+	case KindOverlayStack:
+		constructs = []string{"juce::TabbedComponent", "juce::Component"}
+	case KindSplitView:
+		constructs = []string{"juce::StretchableLayoutManager", "juce::StretchableLayoutResizerBar"}
+	case KindGrid:
+		constructs = []string{"juce::Grid"}
+	case KindScrollView:
+		constructs = []string{"juce::Viewport"}
+	case KindList:
+		constructs = []string{"juce::ListBox", "juce::TableListBox", "juce::TreeView"}
+	case KindText:
+		constructs = []string{"juce::Label"}
+	case KindTextField:
+		constructs = []string{"juce::TextEditor"}
+	case KindButton:
+		constructs = []string{"juce::TextButton", "juce::DrawableButton", "juce::HyperlinkButton"}
+	case KindImage:
+		constructs = []string{"juce::ImageComponent", "juce::DrawableImage"}
+	case KindSlider:
+		constructs = []string{"juce::Slider"}
+	case KindToggle:
+		constructs = []string{"juce::ToggleButton"}
+	case KindSpacer:
+		constructs = []string{"resized() gap allocation"}
+	case KindDivider:
+		constructs = []string{"juce::Component paint() separator"}
+	case KindColor:
+		constructs = []string{"juce::Component paint() fill"}
+	case KindComponent:
+		constructs = []string{"juce::Component"}
+	case KindConditional, KindLoop, KindGeometryReader:
+		constructs = []string{"juce::Component", "project-specific state/layout policy"}
+		caveats = append(caveats, "This source pattern needs explicit native behavior or layout policy in JUCE.")
+	}
+	if len(constructs) == 0 {
+		return PatternMapping{}
+	}
+	return PatternMapping{Platform: "juce", Constructs: constructs, Strategy: strategy, Caveats: caveats}
 }
 
 func contractsFor(node Node) []string {

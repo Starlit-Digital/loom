@@ -67,7 +67,7 @@ func ProjectBuild(manifestPath, projectRoot, outputDir string, overwrite bool) (
 	report.Project = manifest.Project
 	sourcePath := resolveManifestPath(manifest.Source, projectRoot)
 	sourcePlatform := InferSourcePlatform(sourcePath)
-	targetPlatform := firstNonEmpty(manifest.Target, defaultTransferTarget(sourcePlatform))
+	targetPlatform := canonicalPatternPlatform(firstNonEmpty(manifest.Target, defaultTransferTarget(sourcePlatform)))
 
 	sourceAnalysis, err := AnalyzeByPlatform(sourcePath, sourcePlatform)
 	if err != nil {
@@ -89,6 +89,15 @@ func ProjectBuild(manifestPath, projectRoot, outputDir string, overwrite bool) (
 			return report, err
 		}
 		if err := writeProjectJSONArtifact(&report, outputDir, "generated-xaml-report.json", "generated-xaml-report", xaml.Status, xaml, overwrite); err != nil {
+			return report, err
+		}
+	}
+	if targetPlatform == "juce" {
+		juce := GenerateJUCE(sourceAnalysis, manifest.RootView)
+		if err := writeProjectTextArtifact(&report, outputDir, "GeneratedComponent.hpp", "generated-juce", juce.Status, juce.Text, overwrite); err != nil {
+			return report, err
+		}
+		if err := writeProjectJSONArtifact(&report, outputDir, "generated-juce-report.json", "generated-juce-report", juce.Status, juce, overwrite); err != nil {
 			return report, err
 		}
 	}

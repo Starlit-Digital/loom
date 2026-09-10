@@ -100,6 +100,8 @@ func Run(args []string, stdout io.Writer, stderr io.Writer) error {
 		return runInspectSwiftUI(args[1:], stdout, stderr, runtime)
 	case "inspect:qt":
 		return runInspectQt(args[1:], stdout, stderr, runtime)
+	case "inspect:juce":
+		return runInspectJUCE(args[1:], stdout, stderr, runtime)
 	case "inspect:source":
 		return runInspectSource(args[1:], stdout, stderr, runtime)
 	case "inspect:ascii":
@@ -120,6 +122,8 @@ func Run(args []string, stdout io.Writer, stderr io.Writer) error {
 		return runGenerateXAML(args[1:], stdout, stderr, runtime)
 	case "generate:swiftui":
 		return runGenerateSwiftUI(args[1:], stdout, stderr, runtime)
+	case "generate:juce":
+		return runGenerateJUCE(args[1:], stdout, stderr, runtime)
 	case "generate:contracts":
 		return runGenerateContracts(args[1:], stdout, stderr, runtime)
 	case "accessibility:audit":
@@ -427,6 +431,25 @@ func runInspectQt(args []string, stdout, stderr io.Writer, runtime runtimeOption
 	return writeOrPrintChecked(AnalysisText(analysis), output, path, overwrite, stdout, stderr, runtime)
 }
 
+func runInspectJUCE(args []string, stdout, stderr io.Writer, runtime runtimeOptions) error {
+	path, format, output, overwrite, err := sourceArgs(args)
+	if err != nil {
+		return err
+	}
+	analysis, err := AnalyzeJUCE(path)
+	if err != nil {
+		return err
+	}
+	if format == "json" {
+		text, err := prettyJSON(analysis)
+		if err != nil {
+			return err
+		}
+		return writeOrPrintChecked(text, output, path, overwrite, stdout, stderr, runtime)
+	}
+	return writeOrPrintChecked(AnalysisText(analysis), output, path, overwrite, stdout, stderr, runtime)
+}
+
 func runInspectSource(args []string, stdout, stderr io.Writer, runtime runtimeOptions) error {
 	path, format, output, overwrite, err := sourceArgs(args, "--from")
 	if err != nil {
@@ -611,10 +634,10 @@ func runTransfer(args []string, stdout, stderr io.Writer, runtime runtimeOptions
 	from := firstNonEmpty(flagValue(args, "--from"), InferSourcePlatform(path))
 	to := firstNonEmpty(flagValue(args, "--to"), defaultTransferTarget(from))
 	if !validPatternPlatform(from) {
-		return fmt.Errorf("--from must be swiftui, winui3, qt, or a supported alias")
+		return fmt.Errorf("--from must be swiftui, winui3, qt, juce, or a supported alias")
 	}
 	if !validPatternPlatform(to) {
-		return fmt.Errorf("--to must be swiftui, winui3, qt, or a supported alias")
+		return fmt.Errorf("--to must be swiftui, winui3, qt, juce, or a supported alias")
 	}
 	analysis, err := AnalyzeByPlatform(path, from)
 	if err != nil {
@@ -769,6 +792,42 @@ func runGenerateSwiftUI(args []string, stdout, stderr io.Writer, runtime runtime
 		return err
 	}
 	report := GenerateSwiftUI(analysis, parsed.Values["--view-name"])
+	text := report.Text
+	if format == "json" {
+		text, err = prettyJSON(report)
+		if err != nil {
+			return err
+		}
+	}
+	if err := writeOrPrintChecked(text, parsed.Values["--output"], parsed.Positionals[0], parsed.Bools["--overwrite"], stdout, stderr, runtime); err != nil {
+		return err
+	}
+	if report.Status == "error" {
+		return ErrCommandFailed
+	}
+	return nil
+}
+
+func runGenerateJUCE(args []string, stdout, stderr io.Writer, runtime runtimeOptions) error {
+	parsed, err := parseArgs(args, map[string]bool{"--class-name": true, "--component-name": true, "--format": true, "--output": true, "--from": true}, map[string]bool{"--json": true, "--overwrite": true})
+	if err != nil {
+		return err
+	}
+	if len(parsed.Positionals) != 1 {
+		return fmt.Errorf("generate:juce requires a source path")
+	}
+	format := firstNonEmpty(parsed.Values["--format"], "text")
+	if parsed.Bools["--json"] {
+		format = "json"
+	}
+	if format != "text" && format != "json" {
+		return fmt.Errorf("--format must be text or json")
+	}
+	analysis, err := AnalyzeByPlatform(parsed.Positionals[0], parsed.Values["--from"])
+	if err != nil {
+		return err
+	}
+	report := GenerateJUCE(analysis, firstNonEmpty(parsed.Values["--class-name"], parsed.Values["--component-name"]))
 	text := report.Text
 	if format == "json" {
 		text, err = prettyJSON(report)

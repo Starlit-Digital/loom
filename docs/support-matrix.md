@@ -2,7 +2,7 @@
 
 Loom `1.0.0` supports analyzer reports, transfer planning, component graphs,
 reviewable generator scaffolds, target contracts, and manifest-directed project
-build bundles across SwiftUI, WinUI XAML, and Qt source inputs.
+build bundles across SwiftUI, WinUI XAML, Qt, and JUCE inputs.
 
 ## Current Analyzer Support
 
@@ -13,7 +13,23 @@ build bundles across SwiftUI, WinUI XAML, and Qt source inputs.
 | Qt QML | Supported analyzer baseline | Parses common Qt Quick and Controls layout/control constructs into Loom's shared layout model. |
 | Qt Designer UI | Conservative analyzer support | Parses common XML widget/layout constructs. |
 | Qt C++ | Conservative analyzer support | Parses common layout/control construction heuristics. |
+| JUCE C++ | Conservative analyzer and target support | Parses common `juce::Component` widget constructs, supports JUCE as a transfer/contract target, and emits reviewable JUCE Component scaffolds. |
 | Fonts | Supported inspection | Extracts intrinsic OpenType/TrueType/TTC/WOFF metrics or installed family metrics for visual parity profiles. |
+
+## Current JUCE Mapping
+
+| JUCE construct | Loom IR | Current behavior |
+| --- | --- | --- |
+| `juce::Component`, `juce::Viewport` | `verticalStack` / `scrollView` | Preserved as layout surfaces with explicit `resized()` policy in generated scaffolds. |
+| `juce::FlexBox`, `juce::Grid` | `horizontalStack` / `grid` | Mapped as layout intent; exact imperative sizing remains a transfer policy. |
+| `juce::Label` | `text` | Captures label-like text when available. |
+| `juce::TextEditor` | `textField` | Captures editable text surface and reports state-binding contract needs. |
+| `juce::TextButton`, `juce::DrawableButton`, `juce::HyperlinkButton` | `button` | Captures visible label when available and reports native action contract needs. |
+| `juce::Slider` | `slider` | Captures range surface and reports state contract needs. |
+| `juce::ToggleButton` | `toggle` | Captures binary state surface and reports state contract needs. |
+| `juce::ListBox`, `juce::TableListBox`, `juce::TreeView` | `list` | Captures collection surface and reports collection/template contract needs. |
+| `juce::ImageComponent`, `juce::DrawableImage` | `image` | Captures image surface intent. |
+| Other JUCE components | `component` | Preserved as native JUCE component boundaries requiring review. |
 
 ## Current WinUI XAML Mapping
 
@@ -40,10 +56,11 @@ build bundles across SwiftUI, WinUI XAML, and Qt source inputs.
 | --- | --- | --- |
 | `patterns:transfer` | Implemented | Stable transfer planning across supported source/target pairs. |
 | `inspect:parity` | Implemented | Stable structural parity report. |
-| `inspect:visual-parity` | Implemented foundation | Stable profile-normalized visual parity report. |
+| `inspect:visual-parity` | Implemented | Stable profile-normalized metric and semantic visual parity report. |
 | `graph:components` | Implemented | Discover source-tree layout components and custom dependencies. |
 | `generate:xaml` | Implemented scaffold | Emit reviewable WinUI XAML and support guarded owned-region replacement. |
 | `generate:swiftui` | Implemented scaffold | Emit reviewable SwiftUI scaffolds. |
+| `generate:juce` | Implemented scaffold | Emit reviewable JUCE Component C++ scaffolds. |
 | `generate:contracts` | Implemented | Emit target native contracts for behavior, state, action, collection, component boundaries, and accessibility review. |
 | `project:build` | Implemented bundle | Run manifest-directed validation, analysis, generated scaffold, contract, graph, transfer, parity, and summary workflows. |
 
