@@ -67,3 +67,11 @@ Callers should treat unknown non-`ok` statuses as requiring review.
   unless `--overwrite` is provided.
 - `project:build` emits a summary plus individual artifacts so automation can
   archive or inspect each report independently.
+
+## GCF representation — 1.1.0
+
+Reports, project manifests and visual profiles may use complete generic GCF
+snapshots with the same decoded schema. SDK: gcf-go v1.8.0, Apache-2.0.
+Stateful/graph profiles are rejected. Manifest/profile input and decoded content
+are bounded to 2 MiB; generic data conversion and report output to 64 MiB.
+Auto chooses fewer encoded UTF-8 bytes, JSON on ties; no token savings are claimed.

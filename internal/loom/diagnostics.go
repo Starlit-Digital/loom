@@ -236,7 +236,7 @@ func DiagnosticsSelfHealPlan() LoomSelfHealPlan {
 func DiagnosticsProjectConfigValidate(path, projectRoot string) LoomManifestValidationReport {
 	path = filepath.Clean(path)
 	manifest := LoomManifest{}
-	data, readErr := os.ReadFile(path)
+	data, readErr := readStructuredFile(path)
 	if readErr != nil {
 		return LoomManifestValidationReport{SchemaVersion: "1", Status: "error", Project: "", Issues: []LoomManifestValidationIssue{{Severity: SeverityError, Code: "manifest.unreadable", Path: path, Detail: readErr.Error(), Fix: "Correct manifest path or encoding."}}}
 	}

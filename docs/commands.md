@@ -207,3 +207,13 @@ rejected.
   }
 }
 ```
+
+## JSON/GCF interchange (1.1.0)
+
+`capabilities [--format json|gcf|auto]` discovers formats and limits.
+`data encode|decode|stats FILE|- [--format json|gcf|auto]` converts or measures
+complete snapshots without executing them. Encode defaults to GCF; other data
+commands default to JSON. JSON report commands accept GCF/Auto as alternatives;
+report exit status, selected output paths and overwrite guards remain unchanged.
+Manifests/profiles accept generic GCF with existing validation. Catalog files and
+project-build artifacts retain their existing JSON/native source representation.

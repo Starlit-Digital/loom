@@ -170,7 +170,7 @@ func ProjectBuild(manifestPath, projectRoot, outputDir string, overwrite bool) (
 }
 
 func readLoomManifest(path string) (LoomManifest, error) {
-	data, err := os.ReadFile(path)
+	data, err := readStructuredFile(path)
 	if err != nil {
 		return LoomManifest{}, err
 	}

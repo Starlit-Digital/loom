@@ -1,7 +1,10 @@
 package loom
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
+	"github.com/cshaiku/loom/internal/structured"
 	"io"
 	"os"
 	"path/filepath"
@@ -13,10 +16,22 @@ type runtimeOptions struct {
 	quiet      bool
 	verbose    bool
 	lineEnding string
+	dataFormat string
 }
 
 func Run(args []string, stdout io.Writer, stderr io.Writer) error {
+	if handled, code := structured.Command(args, "loom", stdout, stderr); handled {
+		if code != 0 {
+			return ErrCommandFailed
+		}
+		return nil
+	}
+	args, dataFormat, err := structuredArgs(args)
+	if err != nil {
+		return err
+	}
 	runtime, args, err := parseRuntime(args)
+	runtime.dataFormat = dataFormat
 	if err != nil {
 		return err
 	}
@@ -174,6 +189,11 @@ func writeOrPrint(text, output string, stdout, stderr io.Writer, runtime runtime
 }
 
 func writeOrPrintChecked(text, output, input string, overwrite bool, stdout, stderr io.Writer, runtime runtimeOptions) error {
+	var encodeErr error
+	text, encodeErr = encodeReport(text, runtime.dataFormat)
+	if encodeErr != nil {
+		return encodeErr
+	}
 	text = applyLineEnding(text, runtime.lineEnding)
 	if output == "" {
 		_, err := fmt.Fprint(stdout, text)
@@ -246,7 +266,11 @@ func samePath(a, b string) bool {
 }
 
 func writeText(text string, stdout io.Writer, runtime runtimeOptions) error {
-	_, err := fmt.Fprint(stdout, applyLineEnding(text, runtime.lineEnding))
+	text, err := encodeReport(text, runtime.dataFormat)
+	if err != nil {
+		return err
+	}
+	_, err = fmt.Fprint(stdout, applyLineEnding(text, runtime.lineEnding))
 	return err
 }
 
@@ -1165,4 +1189,45 @@ func contains(args []string, value string) bool {
 		}
 	}
 	return false
+}
+
+// Format adaptation reuses the JSON report path; native generated text stays native.
+func structuredArgs(args []string) ([]string, string, error) {
+	args = append([]string(nil), args...)
+	format := ""
+	for i := 0; i < len(args); i++ {
+		if args[i] != "--format" || i+1 >= len(args) {
+			continue
+		}
+		if args[i+1] != "gcf" && args[i+1] != "auto" {
+			continue
+		}
+		if format != "" {
+			return nil, "", fmt.Errorf("duplicate --format")
+		}
+		format = args[i+1]
+		args[i+1] = "json"
+		if len(args) > 0 {
+			switch args[0] {
+			case "list", "commands", "status", "verify", "checks:command-catalog", "guards:summary", "self-heal:plan":
+				args = append(args[:i], args[i+2:]...)
+				args = append(args, "--json")
+				i--
+			}
+		}
+	}
+	return args, format, nil
+}
+func encodeReport(text, format string) (string, error) {
+	if format == "" || !json.Valid([]byte(text)) {
+		return text, nil
+	}
+	var value any
+	decoder := json.NewDecoder(bytes.NewBufferString(text))
+	decoder.UseNumber()
+	if err := decoder.Decode(&value); err != nil {
+		return "", err
+	}
+	body, err := structured.Marshal(value, format)
+	return string(body) + "\n", err
 }

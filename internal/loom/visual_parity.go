@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
-	"os"
 	"regexp"
 	"strconv"
 	"strings"
@@ -240,7 +239,7 @@ func DefaultVisualProfile() VisualProfile {
 }
 
 func LoadVisualProfile(path string) (VisualProfile, error) {
-	data, err := os.ReadFile(path)
+	data, err := readStructuredFile(path)
 	if err != nil {
 		return VisualProfile{}, fmt.Errorf("could not read visual profile at %s", path)
 	}

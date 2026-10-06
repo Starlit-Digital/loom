@@ -1,13 +1,13 @@
 # Loom
 
-Version: **1.0.0**
+Version: **1.1.0**
 
 Loom is a cross-platform Go CLI for UI layout analysis, generation planning,
 translation, pattern catalog validation, transfer planning, and workflow
 diagnostics.
 
 The project ships as an analyzer, generator, and translator for moving UI layout
-intent between SwiftUI, WinUI XAML, Qt, and JUCE. The `1.0.0` release includes
+intent between SwiftUI, WinUI XAML, Qt, and JUCE. The current source includes
 analyzer reports, transfer planning, component graphs, reviewable generator
 scaffolds, target contracts, and manifest-directed project build bundles.
 
@@ -69,6 +69,37 @@ The installed pattern catalog is `$HOME/.local/share/loom/patterns`; verify it f
   `checks:command-catalog`, `guards:summary`, `self-heal:plan`).
 - Write deterministic LF output by default, with `--line-ending crlf` for Windows
   artifacts and `--line-ending native` for host-native text output.
+
+## GCF interchange
+
+Loom 1.1.0 supports complete generic GCF snapshots alongside JSON, using pinned
+gcf-go v1.8.0. Existing text/JSON defaults, generated native source and project
+bundle artifact formats remain unchanged.
+
+```sh
+loom capabilities --format gcf
+loom data encode report.json --format gcf
+loom data decode report.gcf --format json
+loom data stats report.json
+loom inspect:source examples/sampleapp/contentview.swift --format gcf
+loom inspect:xaml examples/sampleapp/mainwindow.xaml --format auto --output report.gcf
+loom list --format gcf
+```
+
+`data` accepts a file or `-` for stdin and does not execute manifests. Encode
+defaults to GCF; decode, stats and capabilities default to JSON. JSON report
+commands accept `--format gcf|auto`; auto selects the smaller encoding, JSON on
+ties, and falls back to JSON for unrepresentable values. Output paths are honored
+exactly; choose an appropriate suffix and inspect the header for Auto output.
+Normal overwrite and input-protection guards remain active.
+
+Project manifests and visual profiles can be JSON or generic GCF; existing schema
+and field validation still apply. Structured input/decoded manifests/profiles are
+capped at 2 MiB, conversion and report output at 64 MiB. Invalid UTF-8, trailing
+values and graph/session-delta profiles are rejected. Pattern catalogs stay JSON;
+project bundle artifacts stay JSON/native text, while the CLI summary can be GCF.
+GCF preserves report data; it does not make generated scaffolds production-ready
+or establish token/performance savings. See THIRD_PARTY_NOTICES.md.
 
 ## patterns catalog
 

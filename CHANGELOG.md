@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.1.0 - 2026-10-06
+
+- Add pinned generic-GCF/JSON conversion, byte stats and capability discovery.
+- Support GCF/Auto report output through existing JSON report paths and preserve
+  output overwrite/input protection and line-ending behavior.
+- Read bounded GCF manifests and visual profiles with existing schema validation.
+- Keep native generated code, pattern catalogs and project bundle artifacts in
+  their established formats; JSON/text defaults remain compatible.
+- Add codec semantic round-trip, malformed/profile/limit and report/input/guard tests.
+- Include Apache-2.0 dependency notice/license for gcf-go v1.8.0.
+
+
 ## 1.0.0 - 2026-09-01
 
 - Implemented Go-native `generate:xaml` for reviewable WinUI XAML fragments and
