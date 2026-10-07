@@ -1,5 +1,10 @@
 # Changelog
 
+## Optional tool integration — 2026-10-07
+
+- Add shared tool inventory, explicit plans and bounded repository/UI/log report workflows.
+- Preserve standalone commands and require an explicit peer for AI feedback.
+
 ## 1.1.0 - 2026-10-06
 
 - Add pinned generic-GCF/JSON conversion, byte stats and capability discovery.

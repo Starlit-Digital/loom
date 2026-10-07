@@ -1,6 +1,6 @@
 # loom
 
-Version: **1.1.0**
+Version: **1.2.0**
 
 loom is a cross-platform Go CLI for UI layout analysis, generation planning,
 translation, pattern catalog validation, transfer planning, and workflow
@@ -220,3 +220,7 @@ loom is open source under the 0BSD license. See [LICENSE](LICENSE).
 5. Run `git add`, commit, and push.
 6. Tag the release, e.g.:
    `git tag -a vX.Y.Z -m "loom X.Y.Z"; git push --tags`.
+
+## Optional companion tools
+
+`loom tools doctor` checks installations; `tools plan` previews workflows and `tools run` collects local reports in a new private directory. Normal commands continue to work without other Starlit tools. AI feedback requires a separate explicit report/peer invocation. See [CLI integration](docs/TOOL_INTEGRATION.md) for recipes, limits and snapshot ownership.

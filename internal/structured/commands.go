@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/cshaiku/loom/internal/appinfo"
 	"io"
 	"os"
 )
@@ -57,7 +58,7 @@ func command(args []string, tool string, stdin io.Reader, out io.Writer) error {
 		if len(args) != 0 {
 			return fmt.Errorf("capabilities accepts only --format")
 		}
-		value = map[string]any{"schemaVersion": 1, "tool": tool, "formats": []string{"json", "gcf", "auto"}, "commands": []string{"capabilities", "data encode", "data decode", "data stats"}, "maximumBytes": MaxBytes, "dataCommandsReadOnly": true, "structuredInterfaces": []string{"JSON/GCF/Auto CLI reports", "JSON/GCF manifests and visual profiles", "native generated source and bundle artifacts retain existing formats"}, "planExecution": "requires explicit tool-specific arguments", "profile": "generic snapshot only", "version": "1.1.0"}
+		value = map[string]any{"schemaVersion": 1, "tool": tool, "formats": []string{"json", "gcf", "auto"}, "commands": []string{"capabilities", "data encode", "data decode", "data stats"}, "maximumBytes": MaxBytes, "dataCommandsReadOnly": true, "structuredInterfaces": []string{"JSON/GCF/Auto CLI reports", "JSON/GCF manifests and visual profiles", "native generated source and bundle artifacts retain existing formats"}, "planExecution": "requires explicit tool-specific arguments", "profile": "generic snapshot only", "version": appinfo.Version}
 	} else {
 		if len(args) != 1 || (action != "encode" && action != "decode" && action != "stats") {
 			return fmt.Errorf("usage: data encode|decode|stats FILE|- [--format json|gcf|auto]")

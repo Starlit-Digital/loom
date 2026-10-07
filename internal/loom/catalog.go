@@ -2,11 +2,12 @@ package loom
 
 import (
 	"fmt"
+	"github.com/cshaiku/loom/internal/appinfo"
 	"sort"
 	"strings"
 )
 
-const Version = "1.1.0"
+const Version = appinfo.Version
 
 type CommandAccess string
 
@@ -29,6 +30,7 @@ type CommandInfo struct {
 }
 
 var Commands = []CommandInfo{
+	{"tools", "optional tool integration", "discover companions and plan or run bounded local workflows; AI feedback requires an explicit peer", "integration", AccessConditionalWrite, []string{"--output-dir"}, nil, []string{"loom tools doctor|plan|run|identity|help"}, []string{"loom tools doctor"}},
 	{"capabilities", "interchange capabilities", "discover JSON/GCF formats and bounded read-only conversion", "diagnostics", AccessRead, nil, nil, []string{"loom capabilities [--format json|gcf|auto]"}, nil},
 	{"data", "convert structured data", "encode, decode or compare JSON/generic-GCF byte sizes without executing plans", "inspection", AccessRead, nil, nil, []string{"loom data encode|decode|stats FILE|- [--format json|gcf|auto]"}, nil},
 	{"accessibility:audit", "audit accessibility and layout", "audit accessible names, target sizes, redundant layouts, malformed nodes, and layout design risks", "accessibility", AccessConditionalWrite, []string{"--output"}, []string{"a11y"}, []string{"loom accessibility:audit <xaml-file> [--format text|json|gcf|auto] [--fail-on none|error|warning] [--output path]"}, []string{"loom accessibility:audit mainwindow.xaml --format json --fail-on warning"}},

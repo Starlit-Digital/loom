@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/cshaiku/loom/internal/structured"
+	"github.com/cshaiku/loom/internal/toolbridge"
 	"io"
 	"os"
 	"path/filepath"
@@ -20,6 +21,12 @@ type runtimeOptions struct {
 }
 
 func Run(args []string, stdout io.Writer, stderr io.Writer) error {
+	if handled, code := toolbridge.Handle(args, "loom", Version, stdout, stderr); handled {
+		if code != 0 {
+			return ErrCommandFailed
+		}
+		return nil
+	}
 	if handled, code := structured.Command(args, "loom", stdout, stderr); handled {
 		if code != 0 {
 			return ErrCommandFailed
