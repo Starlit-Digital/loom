@@ -1,6 +1,6 @@
 ---
 name: Bug report
-about: Report reproducible Loom behavior
+about: Report reproducible loom behavior
 title: ""
 labels: bug
 assignees: ""
@@ -10,7 +10,7 @@ assignees: ""
 
 ## Version And Environment
 
-- Loom version:
+- loom version:
 - Operating system:
 - Shell:
 

@@ -1,6 +1,6 @@
 # Code Of Conduct
 
-Loom uses the Contributor Covenant Code of Conduct, version 2.1.
+loom uses the Contributor Covenant Code of Conduct, version 2.1.
 
 ## Our Pledge
 

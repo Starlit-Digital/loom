@@ -1,8 +1,8 @@
-# Loom
+# loom
 
 Version: **1.1.0**
 
-Loom is a cross-platform Go CLI for UI layout analysis, generation planning,
+loom is a cross-platform Go CLI for UI layout analysis, generation planning,
 translation, pattern catalog validation, transfer planning, and workflow
 diagnostics.
 
@@ -31,7 +31,7 @@ Run `python3 scripts/test-local-install.py` for isolated installer regression ch
 The installed pattern catalog is `$HOME/.local/share/loom/patterns`; verify it from outside the checkout with `loom patterns:validate --json`.
 
 
-## What Loom Does Today
+## What loom Does Today
 
 - Parse WinUI XAML and normalize it into loom's shared layout model (`inspect:xaml`).
 - Parse common SwiftUI layout/control constructs into the same shared model
@@ -72,7 +72,7 @@ The installed pattern catalog is `$HOME/.local/share/loom/patterns`; verify it f
 
 ## GCF interchange
 
-Loom 1.1.0 supports complete generic GCF snapshots alongside JSON, using pinned
+loom 1.1.0 supports complete generic GCF snapshots alongside JSON, using pinned
 gcf-go v1.8.0. Existing text/JSON defaults, generated native source and project
 bundle artifact formats remain unchanged.
 
@@ -180,7 +180,7 @@ parity, and visual-parity reports under `examples/sampleapp/generated/`.
 ## Recommended Screenshots
 
 - [docs/screenshot-targets.md](docs/screenshot-targets.md) lists capture-ready
-  command outputs and optional homepage screenshots that explain Loom usage quickly.
+  command outputs and optional homepage screenshots that explain loom usage quickly.
 
 ## Repository Layout
 
@@ -209,7 +209,7 @@ parity, and visual-parity reports under `examples/sampleapp/generated/`.
 
 ## License
 
-Loom is open source under the 0BSD license. See [LICENSE](LICENSE).
+loom is open source under the 0BSD license. See [LICENSE](LICENSE).
 
 ## Release Checklist
 
@@ -219,4 +219,4 @@ Loom is open source under the 0BSD license. See [LICENSE](LICENSE).
 4. Review [TODO.md](TODO.md) before cutting the next version.
 5. Run `git add`, commit, and push.
 6. Tag the release, e.g.:
-   `git tag -a vX.Y.Z -m "Loom X.Y.Z"; git push --tags`.
+   `git tag -a vX.Y.Z -m "loom X.Y.Z"; git push --tags`.

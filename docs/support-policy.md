@@ -1,6 +1,6 @@
 # Support Policy
 
-This policy separates code Loom can compile from platforms and behaviors Loom
+This policy separates code loom can compile from platforms and behaviors loom
 has actually exercised.
 
 ## Release Lines
@@ -40,7 +40,7 @@ workflows should use that exact version. Older toolchains are unsupported.
 
 ## Stable Contract
 
-For a stable release, Loom should preserve:
+For a stable release, loom should preserve:
 
 - command names and documented aliases;
 - JSON `schema_version`, `status`, `summary`, `findings`, and command-specific

@@ -52,7 +52,7 @@
 - Added a Vigil-style repository policy configuration.
 - Expanded the sample app with a manifest, visual profile, README, repeatable
   report workflow, and generated analysis/parity/transfer output targets.
-- Changed Loom's repository license from MIT to 0BSD.
+- Changed loom's repository license from MIT to 0BSD.
 - Prepared public GitHub and `sltd.ca` release positioning for the pre-1.0
   analyzer and transfer-planning line.
 

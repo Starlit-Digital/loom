@@ -1,9 +1,9 @@
-# Contributing To Loom
+# Contributing To loom
 
-Loom is an open-source CLI for analyzing, generating, and translating UI layout
+loom is an open-source CLI for analyzing, generating, and translating UI layout
 intent across SwiftUI, WinUI XAML, and Qt.
 
-Contributions are welcome when they keep Loom deterministic, local-first,
+Contributions are welcome when they keep loom deterministic, local-first,
 reviewable, and useful for both people and automation.
 
 ## Good First Contributions
@@ -11,7 +11,7 @@ reviewable, and useful for both people and automation.
 - Documentation fixes that make setup, commands, generated artifacts, or release
   expectations easier to verify.
 - Reproducible bug reports with exact input files, command arguments, expected
-  output, actual output, operating system, and Loom version.
+  output, actual output, operating system, and loom version.
 - Parser coverage for common SwiftUI, WinUI XAML, Qt QML, Qt Designer UI, or Qt
   C++ layout constructs.
 - Generator and translator work that preserves source intent and emits reviewable

@@ -1,6 +1,6 @@
 # JSON Schema Contracts
 
-Loom JSON reports use `schema_version: "1"` for the v1 automation contract.
+loom JSON reports use `schema_version: "1"` for the v1 automation contract.
 Additive fields may appear in minor releases. Existing documented fields should
 not be removed or have their meaning changed without a new schema version or
 deprecation notice.

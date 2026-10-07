@@ -2,7 +2,7 @@
 
 ## 2026-09-01 Open-Source And v1.0 Readiness
 
-Loom is intended to be an analyzer, generator, and translator. The `1.0.0`
+loom is intended to be an analyzer, generator, and translator. The `1.0.0`
 codebase includes analyzer reports, transfer planning, component graphs,
 reviewable generator scaffolds, contract reports, project build bundles, schema
 documentation, and release evidence tracking.
@@ -17,7 +17,7 @@ Guidance taken from Vigil and SDF release discipline:
 
 ## Vigil Guidance
 
-Loom uses Vigil-style policy and verification because it is a local-first tool
+loom uses Vigil-style policy and verification because it is a local-first tool
 that will be used by people and coding agents before repositories are pushed,
 published, or handed off. The useful Vigil pattern is not product coupling; it
 is operational discipline: make command access visible, keep writes explicit,
@@ -26,7 +26,7 @@ to the code.
 
 Keep references to Vigil when they explain that discipline or when a
 `vigil.config.json` file is being discussed. Do not use Vigil references as
-branding for Loom, and do not introduce outside-company ownership language into
-Loom docs.
+branding for loom, and do not introduce outside-company ownership language into
+loom docs.
 
 Reference: [Vigil Core](https://paycaltech.com/vigil/).

@@ -12,7 +12,7 @@ Run static checks:
 go vet ./...
 ```
 
-Run Loom's own repository checks:
+Run loom's own repository checks:
 
 ```sh
 go run ./cmd/loom verify --json

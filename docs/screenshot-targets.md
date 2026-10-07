@@ -1,6 +1,6 @@
 # Screenshot Targets
 
-These are the quickest snapshots to show Loom value in README, docs, or bug
+These are the quickest snapshots to show loom value in README, docs, or bug
 reports. They are ordered as a beginner-to-reviewer story.
 
 ## Terminal Output Targets

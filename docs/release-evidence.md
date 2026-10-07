@@ -1,6 +1,6 @@
 # Release Evidence
 
-Use this file to record the evidence for each stable Loom release.
+Use this file to record the evidence for each stable loom release.
 
 ## Required Gates
 
@@ -8,7 +8,7 @@ Use this file to record the evidence for each stable Loom release.
 | --- | --- |
 | Unit tests | `go test ./...` passes. |
 | Static check | `go vet ./...` passes. |
-| Loom verification | `go run ./cmd/loom verify --json` returns `status: ok`. |
+| loom verification | `go run ./cmd/loom verify --json` returns `status: ok`. |
 | Command catalog | `go run ./cmd/loom checks:command-catalog --json` returns `status: ok`. |
 | Sample workflow | `./examples/sampleapp/analyze-sample-app.sh --overwrite` completes and writes analysis, graph, generated scaffold, contract, transfer, parity, and visual-parity artifacts. |
 | Release archives | Tag workflow uploads macOS, Linux, and Windows archives. |
@@ -31,9 +31,9 @@ As of the current `main` work:
 Release date: 2026-09-01
 
 - Commit SHA: `10279a80c97b0540d02d909f107fcedf21908fe2`
-- CI run: https://github.com/cshaiku/Loom/actions/runs/33476210041
-- Release workflow run: https://github.com/cshaiku/Loom/actions/runs/33476210005
-- Release: https://github.com/cshaiku/Loom/releases/tag/v1.0.0
+- CI run: https://github.com/Starlit-Digital/loom/actions/runs/33476210041
+- Release workflow run: https://github.com/Starlit-Digital/loom/actions/runs/33476210005
+- Release: https://github.com/Starlit-Digital/loom/releases/tag/v1.0.0
 
 Native release workflow smoke passed for:
 
@@ -55,7 +55,7 @@ Release archive checksums:
 | `loom-v1.0.0-windows-amd64.zip` | `c3fac983972737540a2fa3bf67f67b79796b57e3d1e74bcd0391a5b7f52cea86` |
 | `loom-v1.0.0-windows-arm64.zip` | `514873332c07d9e532089498a18e45972948c36dccf1f70c6b9f95fb4c3cb489` |
 
-Accepted limitation: generated code is conservative scaffold output. Loom
+Accepted limitation: generated code is conservative scaffold output. loom
 preserves component boundaries and emits contract/transfer reports for
 target-platform review instead of inventing native behavior silently.
 
@@ -75,11 +75,11 @@ For future stable releases, record:
 Fresh local source passed `go test -count=1 ./...`, `go vet ./...`, the
 Python local installer checks, and `git diff --check` on this Mac.
 Fresh compile-only binaries exchanged generic GCF in both directions between
-Bram and Loom, preserving Unicode, a numeric string, and an integer above
+Bram and loom, preserving Unicode, a numeric string, and an integer above
 JavaScript’s exact-number range. Capability output matched VERSION.
 
 Tests cover invalid profiles and input bounds. Bram additionally passed the
-mailbox helper checks and GCF HTTP success/error and config tests. Loom tests
+mailbox helper checks and GCF HTTP success/error and config tests. loom tests
 cover report equivalence, manifest/profile inputs and overwrite protection;
 `verify --json` and `checks:command-catalog --json` passed.
 

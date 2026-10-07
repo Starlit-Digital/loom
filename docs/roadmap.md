@@ -1,6 +1,6 @@
-# Loom Roadmap
+# loom Roadmap
 
-Loom `v1.0.0` is a complete analyzer, generator, and translator for moving UI
+loom `v1.0.0` is a complete analyzer, generator, and translator for moving UI
 layout intent between SwiftUI, WinUI XAML, and Qt.
 
 The `1.0.0` release includes analyzer reports, transfer planning, component

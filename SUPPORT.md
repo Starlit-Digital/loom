@@ -10,7 +10,7 @@ Do not use public issues for suspected vulnerabilities. Follow
 
 Include:
 
-- Loom version from `loom version`;
+- loom version from `loom version`;
 - operating system and shell;
 - command arguments;
 - small repro input, if shareable;

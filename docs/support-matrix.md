@@ -1,6 +1,6 @@
-# Loom Support Matrix
+# loom Support Matrix
 
-Loom `1.0.0` supports analyzer reports, transfer planning, component graphs,
+loom `1.0.0` supports analyzer reports, transfer planning, component graphs,
 reviewable generator scaffolds, target contracts, and manifest-directed project
 build bundles across SwiftUI, WinUI XAML, Qt, and JUCE inputs.
 
@@ -9,8 +9,8 @@ build bundles across SwiftUI, WinUI XAML, Qt, and JUCE inputs.
 | Source dialect | Status | Current behavior |
 | --- | --- | --- |
 | WinUI XAML | Supported analyzer baseline | Parses common layout/control constructs, captures Grid track metadata, resolves selected visual resources and styles, audits transfer/accessibility risks. |
-| SwiftUI | Supported analyzer baseline | Parses common layout/control constructs and visual modifiers into Loom's shared layout model. |
-| Qt QML | Supported analyzer baseline | Parses common Qt Quick and Controls layout/control constructs into Loom's shared layout model. |
+| SwiftUI | Supported analyzer baseline | Parses common layout/control constructs and visual modifiers into loom's shared layout model. |
+| Qt QML | Supported analyzer baseline | Parses common Qt Quick and Controls layout/control constructs into loom's shared layout model. |
 | Qt Designer UI | Conservative analyzer support | Parses common XML widget/layout constructs. |
 | Qt C++ | Conservative analyzer support | Parses common layout/control construction heuristics. |
 | JUCE C++ | Conservative analyzer and target support | Parses common `juce::Component` widget constructs, supports JUCE as a transfer/contract target, and emits reviewable JUCE Component scaffolds. |
@@ -18,7 +18,7 @@ build bundles across SwiftUI, WinUI XAML, Qt, and JUCE inputs.
 
 ## Current JUCE Mapping
 
-| JUCE construct | Loom IR | Current behavior |
+| JUCE construct | loom IR | Current behavior |
 | --- | --- | --- |
 | `juce::Component`, `juce::Viewport` | `verticalStack` / `scrollView` | Preserved as layout surfaces with explicit `resized()` policy in generated scaffolds. |
 | `juce::FlexBox`, `juce::Grid` | `horizontalStack` / `grid` | Mapped as layout intent; exact imperative sizing remains a transfer policy. |
@@ -33,7 +33,7 @@ build bundles across SwiftUI, WinUI XAML, Qt, and JUCE inputs.
 
 ## Current WinUI XAML Mapping
 
-| WinUI XAML construct | Loom IR | Current behavior |
+| WinUI XAML construct | loom IR | Current behavior |
 | --- | --- | --- |
 | `Grid` | `grid` | Parsed as a container. `Grid.RowDefinitions` and `Grid.ColumnDefinitions` are captured as metadata for transfer policy. |
 | `StackPanel Orientation="Vertical"` | `verticalStack` | Parsed as a linear vertical layout. |

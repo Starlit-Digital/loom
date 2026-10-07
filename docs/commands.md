@@ -138,14 +138,14 @@ Visual parity JSON includes per-node semantic descriptors, per-node
 `provenance` for metrics, and per-finding confidence. Semantic descriptors flag
 source-grounded differences in visual role, composition, chrome, emphasis,
 density, interaction, media treatment, alignment, state, and native component
-boundaries. This lets Loom report cases where shared numeric constants match but
+boundaries. This lets loom report cases where shared numeric constants match but
 one platform still renders an old shell approximation, toolbar, media panel, tab
 region, sidebar, or collection differently. Provenance marks values as `source`,
 `font-material`,
 `resolved-resource`, `style-setter`, `explicit-style-setter`, `profile`,
 `resource-reference`, `default-profile`, or `unknown`, so reports distinguish
 measured, explicitly provided, locally resolved, styled, referenced, and assumed
-material properties. For XAML, Loom resolves document-local resources plus local
+material properties. For XAML, loom resolves document-local resources plus local
 merged dictionaries referenced with relative, absolute, or `ms-appx:///` paths,
 implicit styles, explicit `Style="{StaticResource ...}"` references, and simple
 `BasedOn` style chains. It also extracts common object-valued visual resources

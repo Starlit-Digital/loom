@@ -1,6 +1,6 @@
 # Release Checklist
 
-Use this checklist before tagging a public Loom release.
+Use this checklist before tagging a public loom release.
 
 ## Version
 

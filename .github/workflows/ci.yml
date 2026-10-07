@@ -39,7 +39,7 @@ jobs:
       - name: Vet
         run: go vet ./...
 
-      - name: Verify Loom
+      - name: Verify loom
         run: go run ./cmd/loom verify --json
 
       - name: Validate command catalog

@@ -1,7 +1,7 @@
-# Loom Sample App
+# loom Sample App
 
 This sample contains equivalent small layouts in SwiftUI, WinUI XAML, and Qt
-QML. It is intentionally neutral so public contributors can run Loom without
+QML. It is intentionally neutral so public contributors can run loom without
 private app code.
 
 ## Files

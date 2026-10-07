@@ -1,6 +1,6 @@
 ---
 name: Feature request
-about: Propose a Loom capability
+about: Propose a loom capability
 title: ""
 labels: enhancement
 assignees: ""

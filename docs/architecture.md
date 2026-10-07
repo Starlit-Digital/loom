@@ -41,7 +41,7 @@ project builds.
 - `graph:components`: discover component boundaries and source-tree dependency
   edges.
 - `generate:xaml`: emit reviewable WinUI XAML fragments and replace explicit
-  Loom-owned regions.
+  loom-owned regions.
 - `generate:swiftui`: emit reviewable SwiftUI scaffolds.
 - `generate:contracts`: emit target native contract and policy handoff reports.
 - `inspect:ascii`: render the shared tree as a plain text structure.
@@ -94,7 +94,7 @@ project builds.
 
 1. **Component graphing**: discover reachable layout components and dependency
    boundaries.
-2. **Target generation**: emit reviewable SwiftUI or WinUI XAML from Loom IR.
+2. **Target generation**: emit reviewable SwiftUI or WinUI XAML from loom IR.
 3. **Contract generation**: report behavior, state, action, accessibility,
    resource, and native implementation requirements.
 4. **Project build**: run manifest-directed analyzer, generator, transfer,

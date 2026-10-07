@@ -186,7 +186,7 @@ func validPatternPlatform(platform string) bool {
 func jucePatternMapping(kind NodeKind) PatternMapping {
 	constructs := []string{}
 	strategy := "Map through JUCE Components and explicit resized() bounds or project layout helpers."
-	caveats := []string{"JUCE layout is usually imperative; preserve the Loom ordering and sizing policy when writing resized()."}
+	caveats := []string{"JUCE layout is usually imperative; preserve the loom ordering and sizing policy when writing resized()."}
 	switch kind {
 	case KindVerticalStack:
 		constructs = []string{"juce::Component", "resized() vertical bounds"}

@@ -1,6 +1,6 @@
 # Security Policy
 
-Please report suspected security issues privately. Loom parses local UI source
+Please report suspected security issues privately. loom parses local UI source
 files, reads pattern catalogs, emits generated artifacts, and is intended to be
 used by people and coding agents, so command execution boundaries, generated
 code safety, path handling, and supply-chain integrity are in scope.
@@ -11,7 +11,7 @@ Email: `info@sltd.ca`
 
 Include:
 
-- affected Loom version or commit;
+- affected loom version or commit;
 - operating system and shell;
 - exact command and input shape;
 - reproduction steps;
@@ -43,7 +43,7 @@ Out of scope:
 - denial-of-service volume testing against public services;
 - issues requiring access to systems, repositories, or data you do not own or
   have explicit permission to test;
-- unsupported forks or local modifications unless the issue also affects Loom.
+- unsupported forks or local modifications unless the issue also affects loom.
 
 ## Safe Testing Rules
 
