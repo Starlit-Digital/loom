@@ -1,5 +1,7 @@
 # loom repository instructions
 
+The canonical studio checkout is `/private/var/www/starlit-digital/loom`.
+
 Read `README.md` and the relevant docs/source before changing behavior. Preserve
 pre-existing working-tree changes. This repo may contain another task's edits.
 
