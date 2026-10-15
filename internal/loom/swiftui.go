@@ -412,6 +412,9 @@ func swiftDelimiterDiagnostics(tokens []swiftToken) []Diagnostic {
 	stack := []swiftToken{}
 	pairs := map[string]string{"}": "{", ")": "(", "]": "["}
 	for _, token := range tokens {
+		if token.kind != swiftTokenSymbol {
+			continue
+		}
 		switch token.value {
 		case "{", "(", "[":
 			stack = append(stack, token)

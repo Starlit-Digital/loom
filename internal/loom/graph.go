@@ -1,7 +1,10 @@
 package loom
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
+	"io"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -10,13 +13,19 @@ import (
 )
 
 type ComponentGraphReport struct {
-	SchemaVersion string               `json:"schema_version"`
-	Status        string               `json:"status"`
-	Source        string               `json:"source"`
-	Root          string               `json:"root,omitempty"`
-	Components    []ComponentGraphNode `json:"components"`
-	Edges         []ComponentGraphEdge `json:"edges"`
-	Diagnostics   []Diagnostic         `json:"diagnostics"`
+	SchemaVersion string                 `json:"schema_version"`
+	Status        string                 `json:"status"`
+	Source        string                 `json:"source"`
+	Root          string                 `json:"root,omitempty"`
+	Components    []ComponentGraphNode   `json:"components"`
+	Edges         []ComponentGraphEdge   `json:"edges"`
+	Diagnostics   []Diagnostic           `json:"diagnostics"`
+	SourceFiles   []ComponentGraphSource `json:"source_files"`
+}
+
+type ComponentGraphSource struct {
+	Path   string `json:"path"`
+	SHA256 string `json:"sha256"`
 }
 
 type ComponentGraphNode struct {
@@ -43,8 +52,26 @@ func GraphComponents(source, rootView, component, includeGlob, excludeGlob strin
 	nodesByName := map[string]ComponentGraphNode{}
 	edgesByKey := map[string]ComponentGraphEdge{}
 	diagnostics := []Diagnostic{}
+	sourceFiles := []ComponentGraphSource{}
+	if len(paths) > 4096 {
+		return ComponentGraphReport{}, fmt.Errorf("component graph exceeds 4096 source files")
+	}
+	totalBytes := int64(0)
 	for _, path := range paths {
+		before, size, err := componentSourceDigest(path)
+		if err != nil {
+			return ComponentGraphReport{}, err
+		}
+		totalBytes += size
+		if totalBytes > 64<<20 {
+			return ComponentGraphReport{}, fmt.Errorf("component graph source exceeds 64 MiB")
+		}
 		analysis, err := AnalyzeByPlatform(path, "")
+		after, _, hashErr := componentSourceDigest(path)
+		if hashErr != nil || after != before {
+			return ComponentGraphReport{}, fmt.Errorf("source changed while extracting component graph: %s", path)
+		}
+		sourceFiles = append(sourceFiles, ComponentGraphSource{Path: filepath.ToSlash(path), SHA256: before})
 		if err != nil {
 			diagnostics = append(diagnostics, Diagnostic{Severity: SeverityWarning, Code: "GRAPH.ANALYZE", Message: fmt.Sprintf("%s could not be analyzed: %v.", path, err)})
 			continue
@@ -53,20 +80,39 @@ func GraphComponents(source, rootView, component, includeGlob, excludeGlob strin
 		if component != "" && name != component {
 			continue
 		}
-		nodesByName[name] = ComponentGraphNode{
-			Name:        name,
-			Path:        analysis.SourcePath,
-			Dialect:     firstNonEmpty(analysis.Layout.Properties["sourceDialect"], canonicalPatternPlatform(InferSourcePlatform(path))),
-			Kind:        "component",
-			LayoutNodes: analysis.Layout.RecursiveNodeCount(),
+		if prior, ok := nodesByName[name]; ok {
+			prior.Unresolved = true
+			nodesByName[name] = prior
+			diagnostics = append(diagnostics, Diagnostic{Severity: SeverityWarning, Code: "GRAPH.AMBIGUOUS", Message: fmt.Sprintf("Component %s is declared in both %s and %s; dependency identity is ambiguous.", name, prior.Path, path)})
+		} else {
+			nodesByName[name] = ComponentGraphNode{Name: name, Path: analysis.SourcePath, Dialect: firstNonEmpty(analysis.Layout.Properties["sourceDialect"], canonicalPatternPlatform(InferSourcePlatform(path))), Kind: "component", LayoutNodes: analysis.Layout.RecursiveNodeCount()}
 		}
-		diagnostics = append(diagnostics, nonNilDiagnostics(analysis.Diagnostics)...)
-		for _, target := range graphComponentReferences(analysis.Layout) {
+		for _, d := range analysis.Diagnostics {
+			if d.SourcePath == "" {
+				d.SourcePath = path
+			}
+			diagnostics = append(diagnostics, d)
+		}
+		references := graphComponentReferences(analysis.Layout)
+		if strings.EqualFold(filepath.Ext(path), ".qml") {
+			data, e := readSourceFile(path, "QML graph source")
+			if e != nil {
+				return ComponentGraphReport{}, e
+			}
+			references = append(references, qmlComponentReferences(string(data))...)
+		}
+		for _, target := range references {
 			if target == "" || target == name {
 				continue
 			}
 			key := name + "\x00" + target
 			edgesByKey[key] = ComponentGraphEdge{From: name, To: target, Reason: "source layout references a component boundary"}
+		}
+	}
+	for _, source := range sourceFiles {
+		current, _, e := componentSourceDigest(source.Path)
+		if e != nil || current != source.SHA256 {
+			return ComponentGraphReport{}, fmt.Errorf("source changed during graph extraction: %s", source.Path)
 		}
 	}
 	for _, edge := range edgesByKey {
@@ -104,7 +150,7 @@ func GraphComponents(source, rootView, component, includeGlob, excludeGlob strin
 	if root == "" && len(components) > 0 {
 		root = components[0].Name
 	}
-	return ComponentGraphReport{"1", status, source, root, components, edges, diagnostics}, nil
+	return ComponentGraphReport{SchemaVersion: "1", Status: status, Source: source, Root: root, Components: components, Edges: edges, Diagnostics: diagnostics, SourceFiles: sourceFiles}, nil
 }
 
 func graphSourcePaths(source, includeGlob, excludeGlob string) ([]string, error) {
@@ -238,4 +284,29 @@ func ComponentGraphDOT(report ComponentGraphReport) string {
 	}
 	b.WriteString("}\n")
 	return b.String()
+}
+
+// Hash the exact bounded inputs used by extraction; reject special/symlink files.
+func componentSourceDigest(path string) (string, int64, error) {
+	info, err := os.Lstat(path)
+	if err != nil {
+		return "", 0, err
+	}
+	if !info.Mode().IsRegular() {
+		return "", 0, fmt.Errorf("regular graph source required: %s", path)
+	}
+	file, err := os.Open(path)
+	if err != nil {
+		return "", 0, err
+	}
+	defer file.Close()
+	hash := sha256.New()
+	n, err := io.Copy(hash, io.LimitReader(file, (8<<20)+1))
+	if err != nil {
+		return "", 0, err
+	}
+	if n > 8<<20 {
+		return "", 0, fmt.Errorf("graph source exceeds 8 MiB: %s", path)
+	}
+	return hex.EncodeToString(hash.Sum(nil)), n, nil
 }

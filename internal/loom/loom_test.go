@@ -1453,7 +1453,7 @@ func TestCLIJSONAndVersion(t *testing.T) {
 	if err := Run([]string{"version"}, &stdout, &stderr); err != nil {
 		t.Fatal(err)
 	}
-	if got := strings.TrimSpace(stdout.String()); got != "loom 1.2.0" {
+	if got := strings.TrimSpace(stdout.String()); got != "loom "+Version {
 		t.Fatalf("unexpected version output: %q", got)
 	}
 	stdout.Reset()
@@ -1507,7 +1507,7 @@ func TestLineEndingOptionControlsStdoutAndFiles(t *testing.T) {
 	if err := Run([]string{"--line-ending", "crlf", "version"}, &stdout, &stderr); err != nil {
 		t.Fatal(err)
 	}
-	if got := stdout.String(); got != "loom 1.2.0\r\n" {
+	if got := stdout.String(); got != "loom "+Version+"\r\n" {
 		t.Fatalf("expected CRLF stdout, got %q", got)
 	}
 
@@ -1973,5 +1973,48 @@ func TestGenerateCreatesNestedOutputPath(t *testing.T) {
 	}
 	if _, err := os.Stat(out); err != nil {
 		t.Fatalf("expected nested generated output path: %v", err)
+	}
+}
+
+func TestComponentGraphBindsSourceAndReportsAmbiguity(t *testing.T) {
+	root := t.TempDir()
+	a := filepath.Join(root, "A.qml")
+	if err := os.WriteFile(a, []byte("import QtQuick\nItem {}\n"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	report, err := GraphComponents(root, "", "", "", "")
+	if err != nil || len(report.SourceFiles) != 1 || len(report.SourceFiles[0].SHA256) != 64 {
+		t.Fatalf("source binding: %+v %v", report, err)
+	}
+	first := report.SourceFiles[0].SHA256
+	os.WriteFile(a, []byte("import QtQuick\nRectangle {}\n"), 0600)
+	report, err = GraphComponents(root, "", "", "", "")
+	if err != nil || report.SourceFiles[0].SHA256 == first {
+		t.Fatal("source change was not fingerprinted", err)
+	}
+}
+
+func TestComponentGraphDuplicateNamesRemainExplicit(t *testing.T) {
+	root := t.TempDir()
+	for _, dir := range []string{"one", "two"} {
+		if err := os.MkdirAll(filepath.Join(root, dir), 0700); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(filepath.Join(root, dir, "Badge.qml"), []byte("import QtQuick\nItem {}\n"), 0600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	report, err := GraphComponents(root, "", "", "", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	found := false
+	for _, d := range report.Diagnostics {
+		if d.Code == "GRAPH.AMBIGUOUS" {
+			found = true
+		}
+	}
+	if !found || report.Status != "warning" || len(report.SourceFiles) != 2 {
+		t.Fatalf("ambiguity lost: %+v", report)
 	}
 }

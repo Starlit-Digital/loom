@@ -70,6 +70,9 @@ func AnalyzeQtText(path string) (Analysis, error) {
 	}
 	source := string(data)
 	tokens, tokenDiagnostics := tokenizeSwift(source)
+	if strings.EqualFold(filepath.Ext(path), ".qml") {
+		tokens, tokenDiagnostics = tokenizeQML(source)
+	}
 	diagnostics := append(qtTokenDiagnostics(tokenDiagnostics), qtDelimiterDiagnostics(tokens)...)
 	children := parseQtNodes(tokens)
 	return Analysis{SourcePath: path, RootView: "qt", Component: componentName(path), SyntaxNodeCount: countQtConstructTokens(tokens), Layout: Node{Kind: KindRoot, Expression: "qt", Properties: map[string]string{"sourceDialect": "qt"}, Children: children}, Diagnostics: nonNilDiagnostics(diagnostics)}, nil
@@ -81,7 +84,7 @@ func parseQtNodes(tokens []swiftToken) []Node {
 	for i := 0; i < len(tokens); i++ {
 		token := tokens[i]
 		if token.kind != swiftTokenIdentifier {
-			if token.value == "}" && len(stack) > 0 {
+			if token.kind == swiftTokenSymbol && token.value == "}" && len(stack) > 0 {
 				node := stack[len(stack)-1]
 				stack = stack[:len(stack)-1]
 				if len(stack) == 0 {

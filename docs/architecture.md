@@ -135,3 +135,14 @@ Most commands support:
 
 Suggested fixes are attached to relevant findings to support both human review and
 AI-agent actioning.
+
+## Graph workflow integration — 2026-10-15
+
+Component reports now carry bounded source hashes and file-scoped diagnostics.
+QML graph extraction recognizes custom object references separately from layout
+normalization. Its structural lexer handles JavaScript regex, single/double quoted
+strings and opaque template literals; quoted delimiters do not count as braces.
+This is heuristic extraction, not a complete QML/ECMAScript parser. Duplicate
+component names remain explicit ambiguous warnings. The shared bridge consumes
+these identities for source-bound context and workflow planning. See
+[graph workflows](GRAPH_WORKFLOWS.md).

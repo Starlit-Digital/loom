@@ -60,6 +60,7 @@ type Diagnostic struct {
 	Code         string             `json:"code"`
 	Message      string             `json:"message"`
 	SourceOffset *int               `json:"sourceOffset,omitempty"`
+	SourcePath   string             `json:"sourcePath,omitempty"`
 }
 
 type Analysis struct {
