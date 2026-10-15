@@ -10,3 +10,4 @@
 *.gif binary
 *.ico binary
 *.pdf binary
+internal/toolbridge/* text eol=lf
