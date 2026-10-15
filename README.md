@@ -1,6 +1,6 @@
 # loom
 
-Version: **1.3.0**
+Version: **1.3.1**
 
 loom is a cross-platform Go CLI for UI layout analysis, generation planning,
 translation, pattern catalog validation, transfer planning, and workflow
